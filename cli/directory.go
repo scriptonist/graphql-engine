@@ -53,6 +53,7 @@ func (ec *ExecutionContext) validateDirectory() error {
 var filesRequired = []string{
 	"config.yaml",
 	"migrations",
+	"seeds",
 }
 
 // recursivelyValidateDirectory tries to parse 'startFrom' as a project
