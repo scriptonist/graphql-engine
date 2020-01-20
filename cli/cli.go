@@ -141,6 +141,8 @@ type ExecutionContext struct {
 	ExecutionDirectory string
 	// MigrationDir is the name of directory where migrations are stored.
 	MigrationDir string
+	// SeedsDirectory is the name of directory where seed migrations will be stored.
+	SeedsDirectory string
 	// ConfigFile is the file where endpoint etc. are stored.
 	ConfigFile string
 	// MetadataFile (optional) is a yaml|json file where Hasura metadata is stored.
@@ -263,6 +265,7 @@ func (ec *ExecutionContext) Validate() error {
 	ec.ConfigFile = filepath.Join(ec.ExecutionDirectory, "config.yaml")
 	ec.MetadataFile = append(ec.MetadataFile, filepath.Join(ec.MigrationDir, "metadata.yaml"))
 	ec.MetadataFile = append(ec.MetadataFile, filepath.Join(ec.MigrationDir, "metadata.json"))
+	ec.SeedsDirectory = filepath.Join(ec.ExecutionDirectory, "seeds")
 
 	// read config and parse the values into Config
 	err = ec.readConfig()
