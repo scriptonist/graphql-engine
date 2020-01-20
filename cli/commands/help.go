@@ -48,6 +48,7 @@ func (o *helpOptions) run() {
 				NewMigrateCmd(o.EC),
 				NewMetadataCmd(o.EC),
 				NewConsoleCmd(o.EC),
+				NewSeedCmd(o.EC),
 			},
 		},
 		{
