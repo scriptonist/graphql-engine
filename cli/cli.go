@@ -123,6 +123,8 @@ type ExecutionContext struct {
 	MigrationDir string
 	// MetadataDir is the name of directory where metadata files are stored.
 	MetadataDir string
+	// SeedsDirectory is the name of directory where seed migrations will be stored.
+	SeedsDirectory string
 	// ConfigFile is the file where endpoint etc. are stored.
 	ConfigFile string
 
@@ -309,6 +311,7 @@ func (ec *ExecutionContext) Validate() error {
 
 	// set names of config file
 	ec.ConfigFile = filepath.Join(ec.ExecutionDirectory, "config.yaml")
+	ec.SeedsDirectory = filepath.Join(ec.ExecutionDirectory, "seeds")
 
 	// read config and parse the values into Config
 	err = ec.readConfig()

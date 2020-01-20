@@ -251,6 +251,13 @@ func (o *InitOptions) createTemplateFiles() error {
 	if err != nil {
 		return err
 	}
+	// create seeds directory
+	o.EC.SeedsDirectory = filepath.Join(o.EC.ExecutionDirectory, "seeds")
+	err = os.MkdirAll(o.EC.SeedsDirectory, os.ModePerm)
+	if err != nil {
+		return errors.Wrap(err, "cannot write seeds directory")
+	}
+
 	return nil
 }
 
