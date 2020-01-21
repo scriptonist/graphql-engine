@@ -13,7 +13,7 @@ import (
 
 // HasuraAPIProvider will facilitate the interactions with hasura
 type HasuraAPIProvider interface {
-	sendv1Query(m interface{}) (*http.Response, []byte, error)
+	SendQuery(m interface{}) (*http.Response, []byte, error)
 }
 
 // ApplySeedsToDatabase will read all .sql files in the given
@@ -46,7 +46,7 @@ func ApplySeedsToDatabase(directoryPath string, provider HasuraAPIProvider) erro
 		}
 	}
 
-	resp, _, err := provider.sendv1Query(seedQuery)
+	resp, _, err := provider.SendQuery(seedQuery)
 	if err != nil {
 		return errors.Wrap(err, "error running V1 hasura query")
 	}
