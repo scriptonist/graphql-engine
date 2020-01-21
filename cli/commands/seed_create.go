@@ -1,12 +1,10 @@
 package commands
 
 import (
-	"fmt"
-	"path/filepath"
-	"strconv"
-	"time"
-
 	"github.com/hasura/graphql-engine/cli"
+	"github.com/hasura/graphql-engine/cli/seed"
+	"github.com/pkg/errors"
+	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +20,7 @@ func newSeedCreateCmd(ec *cli.ExecutionContext) *cobra.Command {
 		ec: ec,
 	}
 	cmd := &cobra.Command{
-		Use:          "new",
+		Use:          "create",
 		Short:        "create a new seed file",
 		SilenceUsage: false,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -36,10 +34,14 @@ func newSeedCreateCmd(ec *cli.ExecutionContext) *cobra.Command {
 }
 
 func (o *seedNewOptions) run() error {
-	timestamp := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
-	fileNameWithTimeStamp := fmt.Sprintf("%d", timestamp)
-	fullFilePath := filepath.Join(o.ec.SeedsDirectory, fileNameWithTimeStamp)
-
-	fmt.Println(fullFilePath)
+	createSeedOpts := seed.CreateSeedOptions{
+		UserProvidedSeedName: o.filename,
+	}
+	filepath, err := seed.CreateSeed(createSeedOpts)
+	if err != nil || filepath == nil {
+		return errors.Wrap(err, "failed to create seed file")
+	}
+	// Open file in default editor
+	open.Run(*filepath)
 	return nil
 }
