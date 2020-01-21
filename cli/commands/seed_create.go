@@ -6,6 +6,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 type seedNewOptions struct {
@@ -16,6 +17,7 @@ type seedNewOptions struct {
 }
 
 func newSeedCreateCmd(ec *cli.ExecutionContext) *cobra.Command {
+	v := viper.New()
 	opts := seedNewOptions{
 		ec: ec,
 	}
@@ -23,6 +25,10 @@ func newSeedCreateCmd(ec *cli.ExecutionContext) *cobra.Command {
 		Use:          "create",
 		Short:        "create a new seed file",
 		SilenceUsage: false,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			ec.Viper = v
+			return ec.Validate()
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.seedname = args[0]
 			return opts.run()
@@ -36,6 +42,7 @@ func newSeedCreateCmd(ec *cli.ExecutionContext) *cobra.Command {
 func (o *seedNewOptions) run() error {
 	createSeedOpts := seed.CreateSeedOptions{
 		UserProvidedSeedName: o.seedname,
+		DirectoryPath:        o.ec.SeedsDirectory,
 	}
 	filepath, err := seed.CreateSeed(createSeedOpts)
 	if err != nil || filepath == nil {
