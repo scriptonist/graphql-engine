@@ -44,5 +44,5 @@ func (o *seedApplyOptions) run() error {
 	if err != nil {
 		return err
 	}
-	return seed.ApplySeedsToDatabase(hasuraV1APIProvider, o.ec.SeedsDirectory)
+	return seed.ApplySeedsToDatabase(hasuraV1APIProvider.ClientMetadataAndSchema, o.ec.SeedsDirectory)
 }
