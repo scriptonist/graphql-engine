@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/hasura/graphql-engine/cli"
+	v1 "github.com/hasura/graphql-engine/cli/client/v1"
 	"github.com/hasura/graphql-engine/cli/seed"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -39,9 +40,9 @@ func newSeedApplyCmd(ec *cli.ExecutionContext) *cobra.Command {
 }
 
 func (o *seedApplyOptions) run() error {
-	hasuraV1APIProvider, err := seed.NewHasuraV1APIProvider(o.ec.ServerConfig.Endpoint)
+	hasuraV1APIProvider, err := v1.NewClient(o.ec.ServerConfig.Endpoint)
 	if err != nil {
 		return err
 	}
-	return seed.ApplySeedsToDatabase(o.ec.SeedsDirectory, hasuraV1APIProvider)
+	return seed.ApplySeedsToDatabase(hasuraV1APIProvider, o.ec.SeedsDirectory)
 }
