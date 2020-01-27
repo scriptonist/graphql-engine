@@ -16,9 +16,9 @@ type CreateSeedOptions struct {
 	DirectoryPath string
 }
 
-// CreateSeed creates a .sql file according to the arguments
-// provided and opens it for writing
-func CreateSeed(opts CreateSeedOptions) (*string, error) {
+// CreateSeedFile creates a .sql file according to the arguments
+// it'll return full filepath and an error if any
+func CreateSeedFile(opts CreateSeedOptions) (*string, error) {
 	const fileExtension = "sql"
 
 	timestamp := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)

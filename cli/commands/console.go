@@ -6,6 +6,8 @@ import (
 	"os"
 	"sync"
 
+	"github.com/hasura/graphql-engine/cli/seed"
+
 	"github.com/fatih/color"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
@@ -100,7 +102,7 @@ type ConsoleOptions struct {
 func (o *ConsoleOptions) Run() error {
 	log := o.EC.Logger
 	// Switch to "release" mode in production.
-	gin.SetMode(gin.ReleaseMode)
+	// gin.SetMode(gin.ReleaseMode)
 
 	// An Engine instance with the Logger and Recovery middleware already attached.
 	g := gin.New()
@@ -259,6 +261,13 @@ func (r *cRouter) setRoutes(migrationDir string, logger *logrus.Logger) {
 		{
 			metadataAPIs.Any("", api.MetadataAPI)
 		}
+
+		// Seed API's
+		seedAPIs := apis.Group("/seed")
+		{
+			seedAPIs.Use(setSeedDirectoryPath(ec.SeedsDirectory))
+			seedAPIs.POST("/create", seed.CreateSeedAPIHandler)
+		}
 	}
 }
 
@@ -294,6 +303,13 @@ func setMetadataFile(file string) gin.HandlerFunc {
 func setLogger(logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("logger", logger)
+		c.Next()
+	}
+}
+
+func setSeedDirectoryPath(dirPath string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("seedDirectory", dirPath)
 		c.Next()
 	}
 }

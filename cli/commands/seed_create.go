@@ -44,7 +44,7 @@ func (o *seedNewOptions) run() error {
 		UserProvidedSeedName: o.seedname,
 		DirectoryPath:        o.ec.SeedsDirectory,
 	}
-	filepath, err := seed.CreateSeed(createSeedOpts)
+	filepath, err := seed.CreateSeedFile(createSeedOpts)
 	if err != nil || filepath == nil {
 		return errors.Wrap(err, "failed to create seed file")
 	}
