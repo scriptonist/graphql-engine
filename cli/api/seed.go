@@ -1,9 +1,11 @@
-package seed
+package api
 
 import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/hasura/graphql-engine/cli/seed"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,8 +38,8 @@ func CreateSeedAPIHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, CreateSeedResponse{"cannot determine seed directory"})
 		return
 	}
-	var createSeedOpts = CreateSeedOptions{DirectoryPath: seedDirectory.(string), UserProvidedSeedName: requestData.Filename}
-	filename, err := CreateSeedFile(createSeedOpts)
+	var createSeedOpts = seed.CreateSeedOptions{DirectoryPath: seedDirectory.(string), UserProvidedSeedName: requestData.Filename}
+	filename, err := seed.CreateSeedFile(createSeedOpts)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, CreateSeedResponse{err.Error()})
 		return
