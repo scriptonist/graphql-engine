@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/hasura/graphql-engine/cli/seed"
+	"github.com/hasura/graphql-engine/cli/api"
 
 	"github.com/fatih/color"
 	"github.com/gin-contrib/cors"
@@ -13,7 +13,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hasura/graphql-engine/cli"
 	"github.com/hasura/graphql-engine/cli/migrate"
-	"github.com/hasura/graphql-engine/cli/migrate/api"
 	"github.com/hasura/graphql-engine/cli/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -233,7 +232,7 @@ func (r *cRouter) setRoutes(migrationDir, metadataFile string, logger *logrus.Lo
 		seedAPIs := apis.Group("/seed")
 		{
 			seedAPIs.Use(setSeedDirectoryPath(ec.SeedsDirectory))
-			seedAPIs.POST("/create", seed.CreateSeedAPIHandler)
+			seedAPIs.POST("/create", api.CreateSeedAPIHandler)
 		}
 	}
 }
