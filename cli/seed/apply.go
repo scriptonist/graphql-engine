@@ -2,7 +2,6 @@ package seed
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/hasura/graphql-engine/cli/migrate/database/hasuradb"
+	"github.com/spf13/afero"
 )
 
 // HasuraAPIProvider will facilitate the interactions with hasura
@@ -19,20 +19,20 @@ type HasuraAPIProvider interface {
 
 // ApplySeedsToDatabase will read all .sql files in the given
 // directory and apply it to hasura
-func ApplySeedsToDatabase(hasuraAPIProvider HasuraAPIProvider, directoryPath string) error {
+func ApplySeedsToDatabase(fs afero.Fs, hasuraAPIProvider HasuraAPIProvider, directoryPath string) error {
 	seedQuery := hasuradb.HasuraInterfaceBulk{
 		Type: "bulk",
 		Args: make([]interface{}, 0),
 	}
 
-	files, err := ioutil.ReadDir(directoryPath)
+	files, err := afero.ReadDir(fs, directoryPath)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, file := range files {
 		if filepath.Ext(file.Name()) == ".sql" {
-			b, err := ioutil.ReadFile(filepath.Join(directoryPath, file.Name()))
+			b, err := afero.ReadFile(fs, filepath.Join(directoryPath, file.Name()))
 			if err != nil {
 				return err
 			}
