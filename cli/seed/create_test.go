@@ -18,7 +18,7 @@ func TestCreateSeedFile(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "can we create file",
+			name: "can create file",
 			args: args{
 				fs: afero.NewMemMapFs(),
 				opts: CreateSeedOptions{
