@@ -49,11 +49,11 @@ func ApplySeedsToDatabase(fs afero.Fs, hasuraAPIProvider HasuraAPIProvider, dire
 
 	resp, b, err := hasuraAPIProvider.SendQuery(seedQuery)
 	if err != nil {
-		return errors.Wrap(err, "error running V1 hasura query")
+		return errors.Wrap(err, "error running hasura query")
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.Wrap(errors.New("error executing V1 hasura query"), fmt.Sprintf("%v%s", resp, string(b)))
+		return errors.Wrap(errors.New("error executing hasura query"), fmt.Sprintf("%v%s", resp, string(b)))
 	}
 
 	return nil
