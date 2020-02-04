@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/spf13/afero"
+
 	"github.com/hasura/graphql-engine/cli/seed"
 
 	"github.com/gin-gonic/gin"
@@ -39,7 +41,8 @@ func CreateSeedAPIHandler(c *gin.Context) {
 		return
 	}
 	var createSeedOpts = seed.CreateSeedOptions{DirectoryPath: seedDirectory.(string), UserProvidedSeedName: requestData.Filename}
-	filename, err := seed.CreateSeedFile(createSeedOpts)
+	fs := afero.NewOsFs()
+	filename, err := seed.CreateSeedFile(fs, createSeedOpts)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, CreateSeedResponse{err.Error()})
 		return

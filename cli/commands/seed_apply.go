@@ -4,6 +4,7 @@ import (
 	"github.com/hasura/graphql-engine/cli"
 	v1 "github.com/hasura/graphql-engine/cli/client/v1"
 	"github.com/hasura/graphql-engine/cli/seed"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -44,5 +45,6 @@ func (o *seedApplyOptions) run() error {
 	if err != nil {
 		return err
 	}
-	return seed.ApplySeedsToDatabase(hasuraV1APIProvider.ClientMetadataAndSchema, o.ec.SeedsDirectory)
+	fs := afero.NewOsFs()
+	return seed.ApplySeedsToDatabase(fs, hasuraV1APIProvider.ClientMetadataAndSchema, o.ec.SeedsDirectory)
 }

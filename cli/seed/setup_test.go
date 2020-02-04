@@ -4,28 +4,49 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/exec"
 	"testing"
+	"time"
 )
 
 var hasura = flag.Bool("hasura", false, "run hasura integration tests")
+var reuse = flag.Bool("reuse", false, "reuse test assets")
+var noteardown = flag.Bool("no-teardown", false, "don't teardown test assets after test")
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	var teardown func() error
 	var err error
-	if *hasura {
+	if *hasura && !*reuse {
 		log.Println("setting up test assets")
 		// setup a hasura instance
 		if teardown, err = setupHasuraDockerCompose(); err != nil {
 			panic(err)
 		}
+
+		var retries = 20
+		// wait for hasura to get ready
+		log.Printf("waiting for hasura")
+		for retries > 0 {
+			_, err := http.Get("http://0.0.0.0:8080/healthz")
+			if err != nil {
+				retries--
+				time.Sleep(time.Second * 5)
+				continue
+			}
+			break
+		}
+		log.Println("Hasura up")
+
 	}
 	// run tests
 	result := m.Run()
 
-	if *hasura {
+	// teardown test assets when
+	// noteardown and reuse flag is not set
+	if *hasura && !*noteardown && !*reuse {
 		log.Println("tearing down test assets")
 		// teardown the hasura instance
 		teardown()
