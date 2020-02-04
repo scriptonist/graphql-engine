@@ -5,6 +5,7 @@ import (
 	"github.com/hasura/graphql-engine/cli/seed"
 	"github.com/pkg/errors"
 	"github.com/skratchdot/open-golang/open"
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -44,7 +45,8 @@ func (o *seedNewOptions) run() error {
 		UserProvidedSeedName: o.seedname,
 		DirectoryPath:        o.ec.SeedsDirectory,
 	}
-	filepath, err := seed.CreateSeedFile(createSeedOpts)
+	fs := afero.NewOsFs()
+	filepath, err := seed.CreateSeedFile(fs, createSeedOpts)
 	if err != nil || filepath == nil {
 		return errors.Wrap(err, "failed to create seed file")
 	}
