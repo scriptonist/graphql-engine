@@ -2,10 +2,11 @@ package seed
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"time"
+
+	"github.com/spf13/afero"
 )
 
 // CreateSeedOptions has the list of options required
@@ -18,7 +19,7 @@ type CreateSeedOptions struct {
 
 // CreateSeedFile creates a .sql file according to the arguments
 // it'll return full filepath and an error if any
-func CreateSeedFile(opts CreateSeedOptions) (*string, error) {
+func CreateSeedFile(fs afero.Fs, opts CreateSeedOptions) (*string, error) {
 	const fileExtension = "sql"
 
 	timestamp := strconv.FormatInt(time.Now().UnixNano()/int64(time.Millisecond), 10)
@@ -27,11 +28,10 @@ func CreateSeedFile(opts CreateSeedOptions) (*string, error) {
 	fullFilePath := filepath.Join(opts.DirectoryPath, filenameWithTimeStamp)
 
 	// Create file
-	file, err := os.Create(fullFilePath)
+	file, err := fs.Create(fullFilePath)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
-
 	return &fullFilePath, nil
 }
