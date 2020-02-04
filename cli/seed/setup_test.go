@@ -1,4 +1,4 @@
-package v1
+package seed
 
 import (
 	"flag"
@@ -16,6 +16,7 @@ func TestMain(m *testing.M) {
 	var teardown func() error
 	var err error
 	if *hasura {
+		log.Println("setting up test assets")
 		// setup a hasura instance
 		if teardown, err = setupHasuraDockerCompose(); err != nil {
 			panic(err)
@@ -25,6 +26,7 @@ func TestMain(m *testing.M) {
 	result := m.Run()
 
 	if *hasura {
+		log.Println("tearing down test assets")
 		// teardown the hasura instance
 		teardown()
 	}
@@ -52,7 +54,6 @@ func setupHasuraDockerCompose() (func() error, error) {
 	}
 
 	teardown := func() error {
-		log.Println("tearing down test assets")
 		commands = `docker-compose down -v`
 		cmd = exec.Command("bash", "-c", commands)
 		cmd.Dir = dataDirectory
