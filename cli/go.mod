@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/Masterminds/semver v1.5.0
 	github.com/Microsoft/go-winio v0.4.14 // indirect
+	github.com/NYTimes/gziphandler v1.1.1
 	github.com/ahmetb/go-linq v3.0.0+incompatible
 	github.com/andybalholm/cascadia v1.1.0 // indirect
 	github.com/aryann/difflib v0.0.0-20170710044230-e206f873d14a
@@ -21,6 +22,7 @@ require (
 	github.com/fatih/color v1.7.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gin-contrib/cors v1.3.0
+	github.com/gin-contrib/gzip v0.0.1
 	github.com/gin-contrib/static v0.0.0-20191128031702-f81c604d8ac2
 	github.com/gin-gonic/contrib v0.0.0-20191209060500-d6e26eeaa607
 	github.com/gin-gonic/gin v1.5.0
@@ -29,6 +31,7 @@ require (
 	github.com/gosimple/slug v1.9.0 // indirect
 	github.com/jinzhu/configor v1.1.1 // indirect
 	github.com/jinzhu/gorm v1.9.11 // indirect
+	github.com/justinas/nosurf v1.1.0 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/lib/pq v1.1.1
 	github.com/manifoldco/promptui v0.6.0
@@ -62,6 +65,7 @@ require (
 	github.com/theplant/cldr v0.0.0-20190423050709-9f76f7ce4ee8 // indirect
 	github.com/theplant/htmltestingutils v0.0.0-20190423050759-0e06de7b6967 // indirect
 	github.com/theplant/testingutils v0.0.0-20190603093022-26d8b4d95c61 // indirect
+	github.com/turtlemonvh/gin-wraphh v0.0.0-20160304035037-ea8e4927b3a6
 	github.com/yosssi/gohtml v0.0.0-20190915184251-7ff6f235ecaf // indirect
 	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
 	gopkg.in/yaml.v2 v2.2.7
