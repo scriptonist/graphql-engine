@@ -140,7 +140,7 @@ func (o *consoleOptions) run() error {
 		"assetsVersion":   consoleAssetsVersion,
 		"enableTelemetry": o.EC.GlobalConfig.EnableTelemetry,
 		"cliUUID":         o.EC.GlobalConfig.UUID,
-		"cdnAssets":       !o.EC.IsOffline,
+		"cdnAssets":       !o.EC.LoadLocalAssets,
 	})
 	if err != nil {
 		return errors.Wrap(err, "error serving console")
@@ -294,7 +294,7 @@ func serveConsole(assetsVersion, staticDir string, opts gin.H) (*gin.Engine, err
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "console.html", &opts)
 	})
-	if ec.IsOffline {
+	if ec.LoadLocalAssets {
 		ec.Logger.Info("looks like you are offline, serving local assets")
 		r.Use(static.Serve("/static", util.BinaryFileSystem("")))
 	}

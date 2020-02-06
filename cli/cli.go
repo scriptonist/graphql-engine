@@ -188,7 +188,7 @@ type ExecutionContext struct {
 	IsTerminal bool
 
 	// Indicates wheather a user is offline
-	IsOffline bool
+	LoadLocalAssets bool
 }
 
 // NewExecutionContext returns a new instance of execution context
@@ -257,7 +257,7 @@ func (ec *ExecutionContext) Prepare() error {
 		return true
 	}
 	if !connected() {
-		ec.IsOffline = true
+		ec.LoadLocalAssets = true
 	}
 
 	return nil
