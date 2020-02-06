@@ -7,8 +7,9 @@ OUTPUT_DIR := _output
 # compile assets
 .PHONY: assets
 assets:
-	mkdir -p ./assets/versioned && cd ../console && npm run server-build && cp "./static/dist"/*.js "./static/dist"/*.css ../cli/assets/versioned/ && cd -
+	mkdir -p ./assets/versioned && cd ../console && npm run server-build && cp -r "./static/dist/common" "./static/dist"/*.js "./static/dist"/*.css ../cli/assets/versioned/ && cd -
 	go-bindata --pkg assets -o assets/assets.go assets/**/*.html assets/versioned/*
+	rm -rf ./assets/versioned
 
 HAS_GOX := $(shell command -v gox;)
 HAS_BINDATA := $(shell command -v go-bindata;)

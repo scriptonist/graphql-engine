@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/NYTimes/gziphandler"
 	"github.com/fatih/color"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
@@ -20,7 +19,6 @@ import (
 	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	wraphh "github.com/turtlemonvh/gin-wraphh"
 )
 
 // NewConsoleCmd returns the console command
@@ -129,7 +127,6 @@ func (o *consoleOptions) run() error {
 	consoleAssetsVersion := o.EC.Version.GetConsoleAssetsVersion()
 
 	o.EC.Logger.Debugf("rendering console template [%s] with assets [%s]", consoleTemplateVersion, consoleAssetsVersion)
-
 	adminSecretHeader := getAdminSecretHeaderName(o.EC.Version)
 	consoleRouter, err := serveConsole(consoleTemplateVersion, o.StaticDir, gin.H{
 		"apiHost":         "http://" + o.Address,
@@ -143,7 +140,7 @@ func (o *consoleOptions) run() error {
 		"assetsVersion":   consoleAssetsVersion,
 		"enableTelemetry": o.EC.GlobalConfig.EnableTelemetry,
 		"cliUUID":         o.EC.GlobalConfig.UUID,
-		"cdnAssets":       false,
+		"cdnAssets":       !o.EC.IsOffline,
 	})
 	if err != nil {
 		return errors.Wrap(err, "error serving console")
@@ -278,8 +275,7 @@ func allowCors() gin.HandlerFunc {
 func serveConsole(assetsVersion, staticDir string, opts gin.H) (*gin.Engine, error) {
 	// An Engine instance with the Logger and Recovery middleware already attached.
 	r := gin.New()
-	// https://github.com/NYTimes/gziphandler/issues/57#issuecomment-341613470
-	r.Use(wraphh.WrapHH(gziphandler.GzipHandler))
+
 	if !util.DoAssetExist("assets/" + assetsVersion + "/console.html") {
 		assetsVersion = "latest"
 	}
@@ -298,7 +294,10 @@ func serveConsole(assetsVersion, staticDir string, opts gin.H) (*gin.Engine, err
 	r.GET("/", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "console.html", &opts)
 	})
-	r.Use(static.Serve("/static", util.BinaryFileSystem("")))
+	if ec.IsOffline {
+		ec.Logger.Info("looks like you are offline, serving local assets")
+		r.Use(static.Serve("/static", util.BinaryFileSystem("")))
+	}
 
 	return r, nil
 }

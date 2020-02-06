@@ -10,6 +10,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -185,6 +186,9 @@ type ExecutionContext struct {
 
 	// IsTerminal indicates whether the current session is a terminal or not
 	IsTerminal bool
+
+	// Indicates wheather a user is offline
+	IsOffline bool
 }
 
 // NewExecutionContext returns a new instance of execution context
@@ -243,6 +247,18 @@ func (ec *ExecutionContext) Prepare() error {
 		ec.Logger.Debugf("execution id: %v", ec.ID)
 	}
 	ec.Telemetry.ExecutionID = ec.ID
+
+	// Check if user is offline
+	connected := func() bool {
+		_, err := http.Get("https://google.com")
+		if err != nil {
+			return false
+		}
+		return true
+	}
+	if !connected() {
+		ec.IsOffline = true
+	}
 
 	return nil
 }
