@@ -2,7 +2,7 @@
 
 ### Motivation
 
-There is an ongoing discussion in [#2431](https://github.com/hasura/graphql-engine/issues/2431) about how we should model an interface for adding seed data. Two approaches have come to light from the discussions an are described below.
+There is an ongoing discussion in [#2431](https://github.com/hasura/graphql-engine/issues/2431) about how we should model an interface for adding seed data. Two approaches have come to light from the discussions which are described below.
 
 #### Approach 1: Add a new "seed" command to CLI
 
