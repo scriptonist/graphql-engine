@@ -2,8 +2,8 @@ package seed
 
 import (
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/pkg/errors"
@@ -24,19 +24,12 @@ func ApplySeedsToDatabase(fs afero.Fs, hasuraAPIProvider HasuraAPIProvider, dire
 		Type: "bulk",
 		Args: make([]interface{}, 0),
 	}
-
-	files, err := afero.ReadDir(fs, directoryPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, file := range files {
-		if filepath.Ext(file.Name()) == ".sql" {
-			b, err := afero.ReadFile(fs, filepath.Join(directoryPath, file.Name()))
+	err := afero.Walk(fs, directoryPath, func(path string, file os.FileInfo, err error) error {
+		if !file.IsDir() && filepath.Ext(file.Name()) == ".sql" {
+			b, err := afero.ReadFile(fs, path)
 			if err != nil {
 				return err
 			}
-
 			q := hasuradb.HasuraInterfaceQuery{
 				Type: "run_sql",
 				Args: hasuradb.HasuraArgs{
@@ -45,6 +38,11 @@ func ApplySeedsToDatabase(fs afero.Fs, hasuraAPIProvider HasuraAPIProvider, dire
 			}
 			seedQuery.Args = append(seedQuery.Args, q)
 		}
+
+		return nil
+	})
+	if err != nil {
+		return err
 	}
 
 	resp, b, err := hasuraAPIProvider.SendQuery(seedQuery)

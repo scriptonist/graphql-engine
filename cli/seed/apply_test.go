@@ -54,6 +54,29 @@ func TestApplySeedsToDatabase(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "can apply seeds from nested directories",
+			args: args{
+				directoryPath: "seeds/",
+				fs: func(fs afero.Fs) afero.Fs {
+					var sql = `
+						CREATE TABLE account2(
+							id serial PRIMARY KEY,
+							username VARCHAR (50) UNIQUE NOT NULL
+						);
+						
+						INSERT INTO account2 (username) values ('test_user');
+						`
+					err = afero.WriteFile(fs, "seeds/anotherseed/seed.sql", []byte(sql), 0655)
+					if err != nil {
+						t.Fatalf("cannot create seed files: %v", err)
+					}
+					return fs
+				}(afero.NewMemMapFs()),
+				hasuraAPIProvider: client,
+			},
+			wantErr: false,
+		},
+		{
 			name: "can throw error when bad SQL is given",
 			args: args{
 				directoryPath: "seeds/",
