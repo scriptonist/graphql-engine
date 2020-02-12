@@ -191,11 +191,14 @@ library
                      -- testing
                      , QuickCheck
                      , generic-arbitrary
+                     
+                     , directory
 
   exposed-modules:     Control.Arrow.Extended
                      , Control.Arrow.Trans
                      , Control.Monad.Stateless
                      , Control.Monad.Unique
+                     , Data.Time.Clock.Units
 
                      -- exposed for tests
                      , Data.Parser.CacheControl
@@ -222,6 +225,8 @@ library
                      , Hasura.Server.Migrate
                      , Hasura.Server.Compression
                      , Hasura.Server.PGDump
+                     -- Exposed for testing:
+                     , Hasura.Server.Telemetry.Counters
 
                      , Hasura.RQL.Types
                      , Hasura.RQL.Types.Run
@@ -358,7 +363,6 @@ library
                      , Data.Sequence.NonEmpty
                      , Data.TByteString
                      , Data.Text.Extended
-                     , Data.Time.Clock.Units
 
                      , Hasura.SQL.DML
                      , Hasura.SQL.Error
@@ -399,7 +403,10 @@ test-suite graphql-engine-tests
     , natural-transformation >=0.4 && <0.5
     , optparse-applicative
     , pg-client
+    , process
     , QuickCheck
+    , safe
+    , split
     , time
     , transformers-base
     , unordered-containers
@@ -407,9 +414,11 @@ test-suite graphql-engine-tests
   main-is: Main.hs
   other-modules:
     Data.Parser.CacheControlSpec
+    Data.TimeSpec
     Hasura.IncrementalSpec
     Hasura.RQL.MetadataSpec
     Hasura.Server.MigrateSpec
+    Hasura.Server.TelemetrySpec
 
 -- Benchmarks related to caching (e.g. the plan cache).
 --
