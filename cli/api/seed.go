@@ -40,7 +40,7 @@ func CreateSeedAPIHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, CreateSeedResponse{"cannot determine seed directory"})
 		return
 	}
-	var createSeedOpts = seed.CreateSeedOptions{DirectoryPath: seedDirectory.(string), UserProvidedSeedName: requestData.Filename}
+	var createSeedOpts = seed.CreateSeedOpts{DirectoryPath: seedDirectory.(string), UserProvidedSeedName: requestData.Filename}
 	fs := afero.NewOsFs()
 	filename, err := seed.CreateSeedFile(fs, createSeedOpts)
 	if err != nil {
