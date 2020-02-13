@@ -101,7 +101,7 @@ type ConsoleOptions struct {
 func (o *ConsoleOptions) Run() error {
 	log := o.EC.Logger
 	// Switch to "release" mode in production.
-	// gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.ReleaseMode)
 
 	// An Engine instance with the Logger and Recovery middleware already attached.
 	g := gin.New()
