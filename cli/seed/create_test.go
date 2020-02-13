@@ -120,9 +120,6 @@ SELECT pg_catalog.setval('public.account_user_id_seq', 1, true);
 			if tt.args.opts.CreateFromTableOpts != nil {
 				var fileFound = false
 				afero.Walk(tt.args.fs, tt.args.opts.DirectoryPath, func(path string, info os.FileInfo, err error) error {
-					// read files
-					// re := regexp.MustCompile(fmt.Sprintf(`^seeds/[0-9]+\_%s\.sql$`, tt.args.opts.UserProvidedSeedName))
-					// if re.Match([]byte(info.Name())) {
 					if !info.IsDir() {
 						fileFound = true
 						b, err := afero.ReadFile(tt.args.fs, path)
@@ -133,7 +130,6 @@ SELECT pg_catalog.setval('public.account_user_id_seq', 1, true);
 							t.Fatalf("Filename: %v Want: %v, got: %v", path, tt.wantTableSQL, string(b))
 						}
 					}
-					// }
 					return err
 
 				})
