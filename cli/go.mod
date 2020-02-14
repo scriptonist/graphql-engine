@@ -65,6 +65,7 @@ require (
 	github.com/theplant/testingutils v0.0.0-20190603093022-26d8b4d95c61 // indirect
 	github.com/yosssi/gohtml v0.0.0-20190915184251-7ff6f235ecaf // indirect
 	golang.org/x/crypto v0.0.0-20190325154230-a5d413f7728c
+	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v2 v2.2.7
 	moul.io/http2curl v1.0.0 // indirect
 )

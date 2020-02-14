@@ -17,7 +17,7 @@ type ClientPGDump struct {
 // NewClientPGDump returns  a pointer to the respective struct
 func NewClientPGDump(hasuraAPIEndpoint url.URL, headers map[string]string) *ClientPGDump {
 	client := new(ClientPGDump)
-	const pgDumpAPIEndpoint = "v1/pg_dump"
+	const pgDumpAPIEndpoint = "/v1alpha1/pg_dump"
 	client.PGDumpAPIEndpoint = hasuraAPIEndpoint
 	client.PGDumpAPIEndpoint.Scheme = hasuraAPIEndpoint.Scheme
 	client.PGDumpAPIEndpoint.Path = path.Join(hasuraAPIEndpoint.Path, pgDumpAPIEndpoint)
