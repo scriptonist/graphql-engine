@@ -5,10 +5,12 @@ import (
 	"github.com/hasura/graphql-engine/cli/migrate"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // NewMetadataCmd returns the metadata command
 func NewMetadataCmd(ec *cli.ExecutionContext) *cobra.Command {
+	v := viper.GetViper()
 	metadataCmd := &cobra.Command{
 		Use:          "metadata",
 		Aliases:      []string{"md"},
@@ -23,6 +25,16 @@ func NewMetadataCmd(ec *cli.ExecutionContext) *cobra.Command {
 		newMetadataApplyCmd(ec),
 		newMetadataInconsistencyCmd(ec),
 	)
+
+	metadataCmd.PersistentFlags().String("endpoint", "", "http(s) endpoint for Hasura GraphQL Engine")
+	metadataCmd.PersistentFlags().String("admin-secret", "", "admin secret for Hasura GraphQL Engine")
+	metadataCmd.PersistentFlags().String("access-key", "", "access key for Hasura GraphQL Engine")
+	metadataCmd.PersistentFlags().MarkDeprecated("access-key", "use --admin-secret instead")
+
+	v.BindPFlag("endpoint", metadataCmd.PersistentFlags().Lookup("endpoint"))
+	v.BindPFlag("admin_secret", metadataCmd.PersistentFlags().Lookup("admin-secret"))
+	v.BindPFlag("access_key", metadataCmd.PersistentFlags().Lookup("access-key"))
+
 	return metadataCmd
 }
 
