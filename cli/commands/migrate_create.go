@@ -11,6 +11,7 @@ import (
 	"github.com/hasura/graphql-engine/cli/migrate"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/spf13/pflag"
 
 	mig "github.com/hasura/graphql-engine/cli/migrate/cmd"
@@ -26,7 +27,7 @@ const migrateCreateCmdExamples = `  # Setup migration files for the first time b
   # Setup migration files from an instance mentioned by the flag:
   hasura migrate create init --from-server --endpoint "<endpoint>"`
 
-func newMigrateCreateCmd(ec *cli.ExecutionContext) *cobra.Command {
+func newMigrateCreateCmd(ec *cli.ExecutionContext, v *viper.Viper) *cobra.Command {
 	opts := &migrateCreateOptions{
 		EC: ec,
 	}
@@ -38,13 +39,6 @@ func newMigrateCreateCmd(ec *cli.ExecutionContext) *cobra.Command {
 		Example:      migrateCreateCmdExamples,
 		SilenceUsage: true,
 		Args:         cobra.ExactArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			err := ec.Prepare()
-			if err != nil {
-				return err
-			}
-			return ec.Validate()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.name = args[0]
 			opts.EC.Spin("Creating migration files...")

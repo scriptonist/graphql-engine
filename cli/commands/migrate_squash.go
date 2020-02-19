@@ -12,12 +12,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 
 	mig "github.com/hasura/graphql-engine/cli/migrate/cmd"
 )
 
-func newMigrateSquashCmd(ec *cli.ExecutionContext) *cobra.Command {
+func newMigrateSquashCmd(ec *cli.ExecutionContext, v *viper.Viper) *cobra.Command {
 	opts := &migrateSquashOptions{
 		EC: ec,
 	}
@@ -33,13 +34,6 @@ func newMigrateSquashCmd(ec *cli.ExecutionContext) *cobra.Command {
   # Add a name for the new squashed migration
   hasura migrate squash --name "<name>" --from 123`,
 		SilenceUsage: true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			err := ec.Prepare()
-			if err != nil {
-				return err
-			}
-			return ec.Validate()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.newVersion = getTime()
 			return opts.run()

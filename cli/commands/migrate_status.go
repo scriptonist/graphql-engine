@@ -10,9 +10,10 @@ import (
 	"github.com/hasura/graphql-engine/cli/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-func newMigrateStatusCmd(ec *cli.ExecutionContext) *cobra.Command {
+func newMigrateStatusCmd(ec *cli.ExecutionContext, v *viper.Viper) *cobra.Command {
 	opts := &MigrateStatusOptions{
 		EC: ec,
 	}
@@ -25,13 +26,6 @@ func newMigrateStatusCmd(ec *cli.ExecutionContext) *cobra.Command {
   # Check status on a different server:
   hasura migrate status --endpoint "<endpoint>"`,
 		SilenceUsage: true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			err := ec.Prepare()
-			if err != nil {
-				return err
-			}
-			return ec.Validate()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.EC.Spin("Fetching migration status...")
 			status, err := opts.Run()
