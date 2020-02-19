@@ -26,13 +26,6 @@ func newMetadataApplyCmd(ec *cli.ExecutionContext) *cobra.Command {
   # Apply metadata to an instance specified by the flag:
   hasura metadata apply --endpoint "<endpoint>"`,
 		SilenceUsage: true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			err := ec.Prepare()
-			if err != nil {
-				return err
-			}
-			return ec.Validate()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if opts.dryRun {
 				o := &MetadataDiffOptions{
@@ -57,7 +50,6 @@ func newMetadataApplyCmd(ec *cli.ExecutionContext) *cobra.Command {
 
 	f.BoolVar(&opts.FromFile, "from-file", false, "apply metadata from migrations/metadata.[yaml|json]")
 	f.BoolVar(&opts.dryRun, "dry-run", false, "show a diff instead of applying the metadata")
-
 
 	return metadataApplyCmd
 }

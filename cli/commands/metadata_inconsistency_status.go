@@ -15,13 +15,6 @@ func newMetadataInconsistencyStatusCmd(ec *cli.ExecutionContext) *cobra.Command 
 		Use:          "status",
 		Short:        "Check if the metadata is inconsistent or not",
 		SilenceUsage: true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			err := ec.Prepare()
-			if err != nil {
-				return err
-			}
-			return ec.Validate()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.EC.Spin("reading metadata status...")
 			err := opts.read()

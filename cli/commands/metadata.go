@@ -10,7 +10,8 @@ import (
 
 // NewMetadataCmd returns the metadata command
 func NewMetadataCmd(ec *cli.ExecutionContext) *cobra.Command {
-	v := viper.GetViper()
+	v := viper.New()
+	ec.Viper = v
 	metadataCmd := &cobra.Command{
 		Use:          "metadata",
 		Aliases:      []string{"md"},

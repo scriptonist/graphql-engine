@@ -13,8 +13,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func newActionsCreateCmd(ec *cli.ExecutionContext) *cobra.Command {
-	v := viper.GetViper()
+func newActionsCreateCmd(ec *cli.ExecutionContext, v *viper.Viper) *cobra.Command {
 	opts := &actionsCreateOptions{
 		EC: ec,
 	}

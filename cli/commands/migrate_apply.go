@@ -8,10 +8,9 @@ import (
 	migrate "github.com/hasura/graphql-engine/cli/migrate"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-func newMigrateApplyCmd(ec *cli.ExecutionContext, v *viper.Viper) *cobra.Command {
+func newMigrateApplyCmd(ec *cli.ExecutionContext) *cobra.Command {
 	opts := &MigrateApplyOptions{
 		EC: ec,
 	}

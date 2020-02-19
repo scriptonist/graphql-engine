@@ -23,13 +23,6 @@ func newMetadataInconsistencyListCmd(ec *cli.ExecutionContext) *cobra.Command {
 		Aliases:      []string{"ls"},
 		Short:        "List all inconsistent objects from the metadata",
 		SilenceUsage: true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			err := ec.Prepare()
-			if err != nil {
-				return err
-			}
-			return ec.Validate()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			err := opts.run()
 			opts.EC.Spinner.Stop()

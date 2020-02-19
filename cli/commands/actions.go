@@ -47,7 +47,7 @@ func NewActionsCmd(ec *cli.ExecutionContext) *cobra.Command {
 	}
 
 	actionsCmd.AddCommand(
-		newActionsCreateCmd(ec),
+		newActionsCreateCmd(ec, v),
 		newActionsCodegenCmd(ec),
 		newActionsUseCodegenCmd(ec),
 	)

@@ -12,13 +12,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-
 
 	mig "github.com/hasura/graphql-engine/cli/migrate/cmd"
 )
 
-func newMigrateSquashCmd(ec *cli.ExecutionContext, v *viper.Viper) *cobra.Command {
+func newMigrateSquashCmd(ec *cli.ExecutionContext) *cobra.Command {
 	opts := &migrateSquashOptions{
 		EC: ec,
 	}
@@ -47,7 +45,6 @@ func newMigrateSquashCmd(ec *cli.ExecutionContext, v *viper.Viper) *cobra.Comman
 
 	// mark flag as required
 	migrateSquashCmd.MarkFlagRequired("from")
-
 
 	return migrateSquashCmd
 }

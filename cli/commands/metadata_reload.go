@@ -24,13 +24,6 @@ func newMetadataReloadCmd(ec *cli.ExecutionContext) *cobra.Command {
   # Reload metadata on a different instance:
   hasura metadata export --endpoint "<endpoint>"`,
 		SilenceUsage: true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			err := ec.Prepare()
-			if err != nil {
-				return err
-			}
-			return ec.Validate()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.EC.Spin("Reloading metadata...")
 			err := opts.run()

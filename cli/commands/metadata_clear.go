@@ -4,11 +4,9 @@ import (
 	"github.com/hasura/graphql-engine/cli"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 func newMetadataClearCmd(ec *cli.ExecutionContext) *cobra.Command {
-	v := viper.New()
 	opts := &MetadataClearOptions{
 		EC:         ec,
 		ActionType: "clear",
@@ -27,14 +25,6 @@ func newMetadataClearCmd(ec *cli.ExecutionContext) *cobra.Command {
   # Clear metadata on a different Hasura instance:
   hasura metadata clear --endpoint "<endpoint>"`,
 		SilenceUsage: true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			ec.Viper = v
-			err := ec.Prepare()
-			if err != nil {
-				return err
-			}
-			return ec.Validate()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cmd.CalledAs() == "reset" {
 				opts.EC.Logger.Warn("metadata reset command is deprecated, use metadata clear instead")

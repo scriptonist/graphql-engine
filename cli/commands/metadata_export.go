@@ -30,13 +30,6 @@ func newMetadataExportCmd(ec *cli.ExecutionContext) *cobra.Command {
   # Export metadata to another instance specified by the flag:
   hasura metadata export --endpoint "<endpoint>"`,
 		SilenceUsage: true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			err := ec.Prepare()
-			if err != nil {
-				return err
-			}
-			return ec.Validate()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.EC.Spin("Exporting metadata...")
 			err := opts.Run()

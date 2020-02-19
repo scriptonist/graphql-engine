@@ -10,10 +10,9 @@ import (
 	"github.com/hasura/graphql-engine/cli/util"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-func newMigrateStatusCmd(ec *cli.ExecutionContext, v *viper.Viper) *cobra.Command {
+func newMigrateStatusCmd(ec *cli.ExecutionContext) *cobra.Command {
 	opts := &MigrateStatusOptions{
 		EC: ec,
 	}

@@ -53,13 +53,6 @@ By default, shows changes between exported metadata file and server metadata.`,
   # Diff metadata on a different Hasura instance:
   hasura metadata diff --endpoint "<endpoint>"`,
 		Args: cobra.MaximumNArgs(2),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			err := ec.Prepare()
-			if err != nil {
-				return err
-			}
-			return ec.Validate()
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.Args = args
 			return opts.Run()

@@ -49,10 +49,10 @@ func NewMigrateCmd(ec *cli.ExecutionContext) *cobra.Command {
 		},
 	}
 	migrateCmd.AddCommand(
-		newMigrateApplyCmd(ec, v),
-		newMigrateStatusCmd(ec, v),
-		newMigrateCreateCmd(ec, v),
-		newMigrateSquashCmd(ec, v),
+		newMigrateApplyCmd(ec),
+		newMigrateStatusCmd(ec),
+		newMigrateCreateCmd(ec),
+		newMigrateSquashCmd(ec),
 	)
 	migrateCmd.PersistentFlags().String("endpoint", "", "http(s) endpoint for Hasura GraphQL Engine")
 	migrateCmd.PersistentFlags().String("admin-secret", "", "admin secret for Hasura GraphQL Engine")
