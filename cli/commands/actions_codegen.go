@@ -30,9 +30,6 @@ func newActionsCodegenCmd(ec *cli.ExecutionContext) *cobra.Command {
   # Derive an action from a hasura operation
   hasura actions codegen [action-name] --derive-from ""`,
 		SilenceUsage: true,
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return nil
-		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			opts.actions = args
 			return opts.run()
