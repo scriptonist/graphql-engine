@@ -87,6 +87,14 @@ func (f *File) Scan() error {
 		return err
 	}
 
+	type parser func(raw string) (*source.Migration, error) 
+	var parse parser
+	if ConfigVersion >= 2 {
+		parse = source.ParseV2
+	}else {
+		parse = source.DefaultParse
+	}
+
 	for _, fo := range folders {
 		if fo.IsDir() {
 			// v2 migrate
@@ -102,13 +110,6 @@ func (f *File) Scan() error {
 					continue
 				}
 				fileName := fmt.Sprintf("%s.%s", dirName, fi.Name())
-				type parser func(raw string) (*source.Migration, error) 
-				var parse parser
-				if ConfigVersion >= 2 {
-					parse = source.ParseV2
-				}else {
-					parse = source.DefaultParse
-				}
 				m, err := parse(fileName)
 				if err != nil {
 					continue // ignore files that we can't parse
@@ -128,7 +129,7 @@ func (f *File) Scan() error {
 			}
 		} else {
 			// v1 migrate
-			m, err := source.DefaultParse(fo.Name())
+			m, err := parse(fo.Name())
 			if err != nil {
 				continue // ignore files that we can't parse
 			}
