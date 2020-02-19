@@ -63,6 +63,37 @@ func Parse(raw string) (*Migration, error) {
 	return nil, ErrParse
 }
 
+// Parse returns Migration for matching Regex pattern.
+func ParseV2(raw string) (*Migration, error) {
+	fmt.Println("Parse V2")
+	var direction Direction
+	m := Regex.FindStringSubmatch(raw)
+	if len(m) == 5 {
+		versionUint64, err := strconv.ParseUint(m[1], 10, 64)
+		if err != nil {
+			return nil, err
+		}
+
+		// Have different direction type for yaml and sql
+		if m[4] == "sql" {
+			if m[3] == "up" {
+				direction = Up
+			} else if m[3] == "down" {
+				direction = Down
+			} else {
+				return nil, errors.New("Invalid Direction type")
+			}
+		}
+
+		return &Migration{
+			Version:    versionUint64,
+			Identifier: m[2],
+			Direction:  direction,
+		}, nil
+	}
+	return nil, ErrParse
+}
+
 // Validate file to check for empty sql or yaml content.
 func IsEmptyFile(m *Migration, directory string) (bool, error) {
 	data, err := ioutil.ReadFile(filepath.Join(directory, m.Raw))
