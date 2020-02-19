@@ -44,9 +44,6 @@ func NewActionsCmd(ec *cli.ExecutionContext) *cobra.Command {
 			}
 			return nil
 		},
-		Run: func(cmd *cobra.Command, args []string){
-			ec.Logger.Debug(ec.Config.Endpoint)
-		},
 	}
 
 	actionsCmd.AddCommand(
