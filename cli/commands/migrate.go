@@ -41,11 +41,7 @@ func NewMigrateCmd(ec *cli.ExecutionContext) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			err = ec.Validate()
-			if err != nil {
-				return err
-			}
-			return nil
+			return ec.Validate()
 		},
 	}
 	migrateCmd.AddCommand(
