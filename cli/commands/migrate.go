@@ -21,6 +21,7 @@ import (
 	"github.com/hasura/graphql-engine/cli/version"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	// Initialize migration drivers
 	_ "github.com/hasura/graphql-engine/cli/migrate/database/hasuradb"
@@ -29,6 +30,7 @@ import (
 
 // NewMigrateCmd returns the migrate command
 func NewMigrateCmd(ec *cli.ExecutionContext) *cobra.Command {
+	v := viper.GetViper()
 	migrateCmd := &cobra.Command{
 		Use:          "migrate",
 		Short:        "Manage migrations on the database",
@@ -40,6 +42,14 @@ func NewMigrateCmd(ec *cli.ExecutionContext) *cobra.Command {
 		newMigrateCreateCmd(ec),
 		newMigrateSquashCmd(ec),
 	)
+	migrateCmd.PersistentFlags().String("endpoint", "", "http(s) endpoint for Hasura GraphQL Engine")
+	migrateCmd.PersistentFlags().String("admin-secret", "", "admin secret for Hasura GraphQL Engine")
+	migrateCmd.PersistentFlags().String("access-key", "", "access key for Hasura GraphQL Engine")
+	migrateCmd.PersistentFlags().MarkDeprecated("access-key", "use --admin-secret instead")
+
+	v.BindPFlag("endpoint", migrateCmd.PersistentFlags().Lookup("endpoint"))
+	v.BindPFlag("admin_secret", migrateCmd.PersistentFlags().Lookup("admin-secret"))
+	v.BindPFlag("access_key", migrateCmd.PersistentFlags().Lookup("access-key"))
 	return migrateCmd
 }
 

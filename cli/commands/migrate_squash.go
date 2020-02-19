@@ -13,13 +13,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/spf13/viper"
 
 	mig "github.com/hasura/graphql-engine/cli/migrate/cmd"
 )
 
 func newMigrateSquashCmd(ec *cli.ExecutionContext) *cobra.Command {
-	v := viper.New()
 	opts := &migrateSquashOptions{
 		EC: ec,
 	}
@@ -36,7 +34,6 @@ func newMigrateSquashCmd(ec *cli.ExecutionContext) *cobra.Command {
   hasura migrate squash --name "<name>" --from 123`,
 		SilenceUsage: true,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			ec.Viper = v
 			err := ec.Prepare()
 			if err != nil {
 				return err
@@ -54,18 +51,9 @@ func newMigrateSquashCmd(ec *cli.ExecutionContext) *cobra.Command {
 	f.StringVar(&opts.name, "name", "squashed", "name for the new squashed migration")
 	f.BoolVar(&opts.deleteSource, "delete-source", false, "delete the source files after squashing without any confirmation")
 
-	f.String("endpoint", "", "http(s) endpoint for Hasura GraphQL Engine")
-	f.String("admin-secret", "", "admin secret for Hasura GraphQL Engine")
-	f.String("access-key", "", "access key for Hasura GraphQL Engine")
-	f.MarkDeprecated("access-key", "use --admin-secret instead")
-
 	// mark flag as required
 	migrateSquashCmd.MarkFlagRequired("from")
 
-	// need to create a new viper because https://github.com/spf13/viper/issues/233
-	v.BindPFlag("endpoint", f.Lookup("endpoint"))
-	v.BindPFlag("admin_secret", f.Lookup("admin-secret"))
-	v.BindPFlag("access_key", f.Lookup("access-key"))
 
 	return migrateSquashCmd
 }
