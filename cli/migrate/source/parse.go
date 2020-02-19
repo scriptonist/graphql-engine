@@ -65,7 +65,6 @@ func Parse(raw string) (*Migration, error) {
 
 // Parse returns Migration for matching Regex pattern.
 func ParseV2(raw string) (*Migration, error) {
-	fmt.Println("Parse V2")
 	var direction Direction
 	m := Regex.FindStringSubmatch(raw)
 	if len(m) == 5 {
@@ -74,7 +73,7 @@ func ParseV2(raw string) (*Migration, error) {
 			return nil, err
 		}
 
-		// Have different direction type for yaml and sql
+		// Have different direction type for sql
 		if m[4] == "sql" {
 			if m[3] == "up" {
 				direction = Up

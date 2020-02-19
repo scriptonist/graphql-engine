@@ -15,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
+var ConfigVersion int
 
 type File struct {
 	url        string
@@ -101,7 +102,14 @@ func (f *File) Scan() error {
 					continue
 				}
 				fileName := fmt.Sprintf("%s.%s", dirName, fi.Name())
-				m, err := source.DefaultParse(fileName)
+				type parser func(raw string) (*source.Migration, error) 
+				var parse parser
+				if ConfigVersion >= 2 {
+					parse = source.ParseV2
+				}else {
+					parse = source.DefaultParse
+				}
+				m, err := parse(fileName)
 				if err != nil {
 					continue // ignore files that we can't parse
 				}
