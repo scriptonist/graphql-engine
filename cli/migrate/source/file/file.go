@@ -15,17 +15,21 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
-var ConfigVersion int
+var file = new(File)
+
+type parser func(raw string) (*source.Migration, error)
 
 type File struct {
 	url        string
 	path       string
 	migrations *source.Migrations
+	ConfigVersion int
 	logger     *log.Logger
 }
 
-func init() {
-	source.Register("file", &File{})
+func Init(configVersion int) {
+	source.Register("file", file)
+	file.ConfigVersion = configVersion
 }
 
 func (f *File) Open(url string, logger *log.Logger) (source.Driver, error) {
@@ -87,9 +91,8 @@ func (f *File) Scan() error {
 		return err
 	}
 
-	type parser func(raw string) (*source.Migration, error) 
 	var parse parser
-	if ConfigVersion >= 2 {
+	if f.ConfigVersion >= 2 {
 		parse = source.ParseV2
 	}else {
 		parse = source.DefaultParse

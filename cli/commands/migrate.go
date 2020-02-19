@@ -46,7 +46,8 @@ func NewMigrateCmd(ec *cli.ExecutionContext) *cobra.Command {
 func newMigrate(ec *cli.ExecutionContext, isCmd bool) (*migrate.Migrate, error) {
 	dbURL := getDataPath(ec.Config.ServerConfig.ParsedEndpoint, getAdminSecretHeaderName(ec.Version), ec.Config.ServerConfig.AdminSecret)
 	fileURL := getFilePath(ec.MigrationDir)
-	filesource.ConfigVersion = int(ec.Config.Version)
+	filesource.Init(int(ec.Config.Version))
+
 	t, err := migrate.New(fileURL.String(), dbURL.String(), isCmd, ec.Logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "cannot create migrate instance")
