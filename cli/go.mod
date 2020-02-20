@@ -9,7 +9,7 @@ require (
 	github.com/aryann/difflib v0.0.0-20170710044230-e206f873d14a
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a // indirect
 	github.com/aws/aws-sdk-go v1.25.50 // indirect
-	github.com/briandowns/spinner v1.8.0
+	github.com/briandowns/spinner v1.9.0
 	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/elazarl/goproxy v0.0.0-20191011121108-aa519ddbe484 // indirect
@@ -26,7 +26,7 @@ require (
 	github.com/jinzhu/configor v1.1.1 // indirect
 	github.com/jinzhu/gorm v1.9.11 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
-	github.com/manifoldco/promptui v0.6.0
+	github.com/manifoldco/promptui v0.3.2
 	github.com/mattn/go-colorable v0.1.4
 	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
 	github.com/microcosm-cc/bluemonday v1.0.2 // indirect
