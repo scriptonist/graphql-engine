@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hasura/graphql-engine/cli"
 	"github.com/hasura/graphql-engine/cli/migrate"
 	"github.com/hasura/graphql-engine/cli/migrate/cmd"
 	mig "github.com/hasura/graphql-engine/cli/migrate/cmd"
@@ -32,6 +33,10 @@ func (s *squashCreateRequest) setDefaults() {
 }
 
 func SquashCreateAPI(c *gin.Context) {
+	configVersion, ok := c.Get("configVersion")
+	if !ok {
+		return
+	}
 	migratePtr, ok := c.Get("migrate")
 	if !ok {
 		return
@@ -58,7 +63,7 @@ func SquashCreateAPI(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, &Response{Code: "internal_error", Message: err.Error()})
 		return
 	}
-	versions, err := cmd.SquashCmd(t, request.From, request.version, request.Name, sourceURL.Path)
+	versions, err := cmd.SquashCmd(t, request.From, request.version, request.Name, sourceURL.Path, configVersion.(cli.ConfigVersion))
 	if err != nil {
 		if strings.HasPrefix(err.Error(), DataAPIError) {
 			c.JSON(http.StatusBadRequest, &Response{Code: "data_api_error", Message: strings.TrimPrefix(err.Error(), DataAPIError)})

@@ -85,7 +85,7 @@ type migrateCreateOptions struct {
 
 func (o *migrateCreateOptions) run() (version int64, err error) {
 	timestamp := getTime()
-	createOptions := mig.New(timestamp, o.name, o.EC.MigrationDir)
+	createOptions := mig.New(timestamp, o.name, o.EC.MigrationDir, o.EC.Config.Version)
 
 	if o.fromServer {
 		o.sqlServer = true

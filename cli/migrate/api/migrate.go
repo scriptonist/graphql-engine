@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hasura/graphql-engine/cli"
 	"github.com/hasura/graphql-engine/cli/migrate"
 	"github.com/hasura/graphql-engine/cli/migrate/cmd"
 	"github.com/hasura/graphql-engine/cli/migrate/database/hasuradb"
@@ -42,6 +43,10 @@ type requestType struct {
 }
 
 func MigrateAPI(c *gin.Context) {
+	configVersion, ok := c.Get("configVersion")
+	if !ok {
+		return
+	}
 	migratePtr, ok := c.Get("migrate")
 	if !ok {
 		return
@@ -128,7 +133,7 @@ func MigrateAPI(c *gin.Context) {
 			}
 		}
 
-		createOptions := cmd.New(timestamp, request.Name, sourceURL.Path)
+		createOptions := cmd.New(timestamp, request.Name, sourceURL.Path, configVersion.(cli.ConfigVersion))
 		if sqlUp.String() != "" {
 			err := createOptions.SetSQLUp(sqlUp.String())
 			if err != nil {

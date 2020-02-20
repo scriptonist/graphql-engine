@@ -68,7 +68,7 @@ func (o *migrateSquashOptions) run() error {
 		return errors.Wrap(err, "unable to initialize migrations driver")
 	}
 
-	versions, err := mig.SquashCmd(migrateDrv, o.from, o.newVersion, o.name, o.EC.MigrationDir)
+	versions, err := mig.SquashCmd(migrateDrv, o.from, o.newVersion, o.name, o.EC.MigrationDir, o.EC.Config.Version)
 	o.EC.Spinner.Stop()
 	if err != nil {
 		return errors.Wrap(err, "unable to squash migrations")

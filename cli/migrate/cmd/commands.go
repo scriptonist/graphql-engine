@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/ghodss/yaml"
+	"github.com/hasura/graphql-engine/cli"
 	"github.com/hasura/graphql-engine/cli/migrate"
 	"github.com/pkg/errors"
 )
@@ -23,24 +24,26 @@ const (
 var ext = []string{sqlFile, yamlFile}
 
 type CreateOptions struct {
-	Version   string
-	Directory string
-	Name      string
-	MetaUp    []byte
-	MetaDown  []byte
-	SQLUp     []byte
-	SQLDown   []byte
+	Version       string
+	Directory     string
+	Name          string
+	MetaUp        []byte
+	MetaDown      []byte
+	SQLUp         []byte
+	SQLDown       []byte
+	ConfigVersion cli.ConfigVersion
 }
 
-func New(version int64, name, directory string) *CreateOptions {
+func New(version int64, name, directory string, configVersion cli.ConfigVersion) *CreateOptions {
 	v := strconv.FormatInt(version, 10)
 	if runtime.GOOS == "windows" {
 		directory = strings.TrimPrefix(directory, "/")
 	}
 	return &CreateOptions{
-		Version:   v,
-		Directory: directory,
-		Name:      name,
+		Version:       v,
+		Directory:     directory,
+		Name:          name,
+		ConfigVersion: configVersion,
 	}
 }
 
@@ -125,19 +128,22 @@ func (c *CreateOptions) Create() error {
 		return errors.New("none of the files has been set with data")
 	}
 
-	if c.MetaUp != nil {
-		// Create MetaUp
-		err = createFile(filepath.Join(path, "up.yaml"), c.MetaUp)
-		if err != nil {
-			return err
+	// Populate this yaml migrartion files only if config version is 1
+	if c.ConfigVersion == 1 {
+		if c.MetaUp != nil {
+			// Create MetaUp
+			err = createFile(filepath.Join(path, "up.yaml"), c.MetaUp)
+			if err != nil {
+				return err
+			}
 		}
-	}
 
-	if c.MetaDown != nil {
-		// Create MetaDown
-		err = createFile(filepath.Join(path, "down.yaml"), c.MetaDown)
-		if err != nil {
-			return err
+		if c.MetaDown != nil {
+			// Create MetaDown
+			err = createFile(filepath.Join(path, "down.yaml"), c.MetaDown)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -220,13 +226,13 @@ func DownCmd(m *migrate.Migrate, limit int64) error {
 	}
 }
 
-func SquashCmd(m *migrate.Migrate, from uint64, version int64, name, directory string) (versions []int64, err error) {
+func SquashCmd(m *migrate.Migrate, from uint64, version int64, name, directory string, configVersion cli.ConfigVersion) (versions []int64, err error) {
 	versions, upMeta, upSql, downMeta, downSql, err := m.Squash(from)
 	if err != nil {
 		return
 	}
 
-	createOptions := New(version, name, directory)
+	createOptions := New(version, name, directory, configVersion)
 	if len(upMeta) != 0 {
 		byteUp, err := yaml.Marshal(upMeta)
 		if err != nil {

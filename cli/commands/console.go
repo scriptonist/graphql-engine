@@ -122,7 +122,7 @@ func (o *ConsoleOptions) Run() error {
 		t,
 	}
 
-	r.setRoutes(o.EC.MigrationDir, o.EC.Logger)
+	r.setRoutes(o.EC.MigrationDir, o.EC.Logger, ec.Config.Version)
 
 	consoleTemplateVersion := o.EC.Version.GetConsoleTemplateVersion()
 	consoleAssetsVersion := o.EC.Version.GetConsoleAssetsVersion()
@@ -233,12 +233,13 @@ type cRouter struct {
 	migrate *migrate.Migrate
 }
 
-func (r *cRouter) setRoutes(migrationDir string, logger *logrus.Logger) {
+func (r *cRouter) setRoutes(migrationDir string, logger *logrus.Logger, configVersion cli.ConfigVersion) {
 	apis := r.router.Group("/apis")
 	{
 		apis.Use(setLogger(logger))
 		apis.Use(setFilePath(migrationDir))
 		apis.Use(setMigrate(r.migrate))
+		apis.Use(setConfigVersion(int(configVersion)))
 		// Migrate api endpoints and middleware
 		migrateAPIs := apis.Group("/migrate")
 		{
@@ -286,6 +287,13 @@ func setMetadataFile(file string) gin.HandlerFunc {
 func setLogger(logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("logger", logger)
+		c.Next()
+	}
+}
+
+func setConfigVersion(configVersion int) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("configVersion", configVersion)
 		c.Next()
 	}
 }
