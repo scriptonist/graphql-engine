@@ -1,7 +1,6 @@
 package seed
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"regexp"
@@ -28,7 +27,7 @@ func TestCreateSeedFile(t *testing.T) {
 				"type": "run_sql",
 				"args": map[string]string{
 					"sql": `
-					CREATE TABLE account(
+					CREATE TABLE account1(
 						user_id serial PRIMARY KEY,
 						username VARCHAR (50) UNIQUE NOT NULL,
 						password VARCHAR (50) NOT NULL,
@@ -39,7 +38,7 @@ func TestCreateSeedFile(t *testing.T) {
 			{
 				"type": "run_sql",
 				"args": map[string]string{
-					"sql": `INSERT INTO account (username, password, email) values ('scriptonist', 'no you cant guess it', 'hello@drogon.com');`,
+					"sql": `INSERT INTO account1 (username, password, email) values ('scriptonist', 'no you cant guess it', 'hello@drogon.com');`,
 				},
 			},
 			// Create table 2
@@ -118,13 +117,13 @@ func TestCreateSeedFile(t *testing.T) {
 					DirectoryPath:        "seeds/",
 					UserProvidedSeedName: "xyzfromtable",
 					CreateFromTableOpts: &CreateFromTableOpts{
-						TableNames:   []string{"account"},
+						TableNames:   []string{"account1"},
 						PGDumpClient: client.ClientPGDump,
 					},
 				},
 			},
-			wantTableSQL: `INSERT INTO public.account VALUES (1, 'scriptonist', 'no you cant guess it', 'hello@drogon.com');
-SELECT pg_catalog.setval('public.account_user_id_seq', 1, true);
+			wantTableSQL: `INSERT INTO public.account1 VALUES (1, 'scriptonist', 'no you cant guess it', 'hello@drogon.com');
+SELECT pg_catalog.setval('public.account1_user_id_seq', 1, true);
 `,
 			wantErr: false,
 		},
@@ -136,17 +135,17 @@ SELECT pg_catalog.setval('public.account_user_id_seq', 1, true);
 					DirectoryPath:        "seeds/",
 					UserProvidedSeedName: "getfromthreetables",
 					CreateFromTableOpts: &CreateFromTableOpts{
-						TableNames:   []string{"account", "account2", "account3"},
+						TableNames:   []string{"account1", "account2", "account3"},
 						PGDumpClient: client.ClientPGDump,
 					},
 				},
 			},
-			wantTableSQL: `INSERT INTO public.account VALUES (1, 'scriptonist', 'no you cant guess it', 'hello@drogon.com');
+			wantTableSQL: `INSERT INTO public.account1 VALUES (1, 'scriptonist', 'no you cant guess it', 'hello@drogon.com');
 INSERT INTO public.account2 VALUES (1, 'scriptonist', 'no you cant guess it', 'hello@drogon.com');
 INSERT INTO public.account3 VALUES (1, 'scriptonist', 'no you cant guess it', 'hello@drogon.com');
+SELECT pg_catalog.setval('public.account1_user_id_seq', 1, true);
 SELECT pg_catalog.setval('public.account2_user_id_seq', 1, true);
 SELECT pg_catalog.setval('public.account3_user_id_seq', 1, true);
-SELECT pg_catalog.setval('public.account_user_id_seq', 1, true);
 `,
 			wantErr: false,
 		},
@@ -181,7 +180,7 @@ SELECT pg_catalog.setval('public.account_user_id_seq', 1, true);
 			// See if creating seed from tables succeded
 			if tt.args.opts.CreateFromTableOpts != nil {
 				var fileFound = false
-				afero.Walk(tt.args.fs, tt.args.opts.DirectoryPath, func(path string, info os.FileInfo, err error) error {
+				err = afero.Walk(tt.args.fs, tt.args.opts.DirectoryPath, func(path string, info os.FileInfo, err error) error {
 					var re = regexp.MustCompile(tt.args.opts.UserProvidedSeedName)
 					if !info.IsDir() && re.Match([]byte(info.Name())) {
 						fileFound = true
@@ -190,20 +189,15 @@ SELECT pg_catalog.setval('public.account_user_id_seq', 1, true);
 							t.Errorf("error while reading seed file: %v", err)
 						}
 						if string(b) != tt.wantTableSQL {
-							fmt.Println("-----")
-							fmt.Println(string(b))
-							fmt.Println("-----")
-							fmt.Println()
-							fmt.Println("-----")
-							fmt.Println(tt.wantTableSQL)
-							fmt.Println("-----")
-							fmt.Println()
 							t.Fatalf("Filename: %v Want: %v, got: %v", path, tt.wantTableSQL, string(b))
 						}
 					}
 					return err
 
 				})
+				if err != nil {
+					t.Fatalf("error walking directory %v", err)
+				}
 				if !fileFound {
 					t.Fatalf("seed file not created for %v", tt.name)
 				}
