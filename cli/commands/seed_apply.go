@@ -41,7 +41,7 @@ func newSeedApplyCmd(ec *cli.ExecutionContext) *cobra.Command {
 }
 
 func (o *seedApplyOptions) run() error {
-	hasuraV1APIProvider, err := v1.NewClient(o.ec.ServerConfig.Endpoint)
+	hasuraV1APIProvider, err := v1.NewClient(o.ec.Config.Endpoint)
 	if err != nil {
 		return err
 	}

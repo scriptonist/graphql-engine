@@ -54,7 +54,7 @@ func (o *seedNewOptions) run() error {
 	// create a hasura client and add table name opts
 	if len(o.fromTableNames) > 0 {
 		// Create a client
-		client, err := v1.NewClient(o.ec.ServerConfig.Endpoint)
+		client, err := v1.NewClient(o.ec.Config.Endpoint)
 		if err != nil {
 			return err
 		}
