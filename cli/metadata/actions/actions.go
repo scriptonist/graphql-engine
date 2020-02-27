@@ -182,7 +182,7 @@ input SampleInput {
 		}
 	}
 	defaultText := printer.Print(doc).(string)
-	data, err := editor.CaptureInputFromEditor(editor.GetPreferredEditorFromEnvironment, defaultText)
+	data, err := editor.CaptureInputFromEditor(editor.GetPreferredEditorFromEnvironment, defaultText, "*.graphql")
 	if err != nil {
 		return errors.Wrap(err, "error in getting input from editor")
 	}

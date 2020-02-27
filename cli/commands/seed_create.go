@@ -1,11 +1,15 @@
 package commands
 
 import (
+	"encoding/json"
+	"net/http"
+
 	"github.com/hasura/graphql-engine/cli"
 	v1 "github.com/hasura/graphql-engine/cli/client/v1"
+	"github.com/hasura/graphql-engine/cli/metadata/actions/editor"
+	"github.com/hasura/graphql-engine/cli/migrate/database/hasuradb"
 	"github.com/hasura/graphql-engine/cli/seed"
 	"github.com/pkg/errors"
-	"github.com/skratchdot/open-golang/open"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -50,6 +54,7 @@ func (o *seedNewOptions) run() error {
 		UserProvidedSeedName: o.seedname,
 		DirectoryPath:        o.ec.SeedsDirectory,
 	}
+
 	// If we are initializing from a database table
 	// create a hasura client and add table name opts
 	if len(o.fromTableNames) > 0 {
@@ -58,10 +63,37 @@ func (o *seedNewOptions) run() error {
 		if err != nil {
 			return err
 		}
-		createSeedOpts.CreateFromTableOpts = &seed.CreateFromTableOpts{
-			TableNames:   o.fromTableNames,
-			PGDumpClient: client.ClientPGDump,
+		// Send a pg dump query to dump just sql
+		pgDumpOpts := []string{"--no-owner", "--no-acl", "--data-only", "--inserts"}
+		for _, table := range o.fromTableNames {
+			pgDumpOpts = append(pgDumpOpts, "--table", table)
 		}
+		query := hasuradb.SchemaDump{
+			Opts:        pgDumpOpts,
+			CleanOutput: true,
+		}
+		// Send the query
+		resp, body, err := client.SendPGDumpQuery(query)
+
+		var horror hasuradb.HasuraError
+		if resp.StatusCode != http.StatusOK {
+			err = json.Unmarshal(body, &horror)
+			if err != nil {
+				return err
+			}
+			return errors.New(string(body))
+		}
+		if err != nil {
+			return errors.New(string(body))
+		}
+		createSeedOpts.Data = body
+	} else {
+		const defaultText = ""
+		data, err := editor.CaptureInputFromEditor(editor.GetPreferredEditorFromEnvironment, defaultText, "*.sql")
+		if err != nil {
+			return err
+		}
+		createSeedOpts.Data = data
 	}
 
 	fs := afero.NewOsFs()
@@ -69,7 +101,6 @@ func (o *seedNewOptions) run() error {
 	if err != nil || filepath == nil {
 		return errors.Wrap(err, "failed to create seed file")
 	}
-	// Open file in default editor
-	open.Run(*filepath)
+
 	return nil
 }
