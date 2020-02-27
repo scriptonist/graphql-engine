@@ -81,7 +81,9 @@ func TestApplySeedsToDatabase(t *testing.T) {
 			args: args{
 				directoryPath: "seeds/",
 				fs: func(fs afero.Fs) afero.Fs {
-					afero.WriteFile(fs, "seeds/bad.sql", []byte("insert into gibberish gibberish"), 0655)
+					if err := afero.WriteFile(fs, "seeds/bad.sql", []byte("insert into gibberish gibberish"), 0655); err != nil {
+						t.Fatalf("cannot create file %v", err)
+					}
 					return fs
 				}(afero.NewMemMapFs()),
 				hasuraAPIProvider: client,
