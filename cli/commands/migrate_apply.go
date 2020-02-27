@@ -91,6 +91,7 @@ func newMigrateApplyCmd(ec *cli.ExecutionContext) *cobra.Command {
 
 	f.StringVar(&opts.VersionMigration, "version", "", "only apply this particular migration")
 	f.BoolVar(&opts.SkipExecution, "skip-execution", false, "skip executing the migration action, but mark them as applied")
+	f.BoolVar(&opts.DryRun, "dry-run", false, "do a dry run and get a list of changes which will be applied")
 	f.StringVar(&opts.MigrationType, "type", "up", "type of migration (up, down) to be used with version flag")
 
 	return migrateApplyCmd
@@ -106,6 +107,7 @@ type MigrateApplyOptions struct {
 	// version up to which migration chain has to be applied
 	GotoVersion   string
 	SkipExecution bool
+	DryRun        bool
 }
 
 func (o *MigrateApplyOptions) Run() error {
@@ -118,6 +120,7 @@ func (o *MigrateApplyOptions) Run() error {
 	if err != nil {
 		return err
 	}
+	migrateDrv.DryRun = o.DryRun
 	migrateDrv.SkipExecution = o.SkipExecution
 
 	return ExecuteMigration(migrationType, migrateDrv, step)

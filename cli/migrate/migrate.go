@@ -99,6 +99,7 @@ type Migrate struct {
 	status *Status
 
 	SkipExecution bool
+	DryRun        bool
 }
 
 // New returns a new Migrate instance from a source URL and a database URL.
@@ -1141,6 +1142,19 @@ func (m *Migrate) readDown(limit int64, ret chan<- interface{}) {
 // to stop execution because it might have received a stop signal on the
 // GracefulStop channel.
 func (m *Migrate) runMigrations(ret <-chan interface{}) error {
+	var dryRunPrinter func(<-chan Migration)
+	var buf *bytes.Buffer
+	var dryRunChan = make(chan Migration)
+	if m.DryRun {
+		dryRunPrinter, buf = getDryRunPrinter(dryRunChan)
+		go dryRunPrinter(dryRunChan)
+		defer func() {
+			fmt.Println("Status")
+			fmt.Println(buf.String())
+			close(dryRunChan)
+		}()
+	}
+
 	var lastInsertVersion int64
 	for r := range ret {
 		if m.stop() {
@@ -1155,7 +1169,7 @@ func (m *Migrate) runMigrations(ret <-chan interface{}) error {
 		case *Migration:
 			migr := r.(*Migration)
 			if migr.Body != nil {
-				if !m.SkipExecution {
+				if !m.SkipExecution && !m.DryRun {
 					if err := m.databaseDrv.Run(migr.BufferedBody, migr.FileType, migr.FileName); err != nil {
 						return err
 					}
@@ -1164,11 +1178,17 @@ func (m *Migrate) runMigrations(ret <-chan interface{}) error {
 				version := int64(migr.Version)
 				if version == migr.TargetVersion {
 					if version != lastInsertVersion {
-						// Insert Version number into the table
-						if err := m.databaseDrv.InsertVersion(version); err != nil {
-							return err
+						if !m.DryRun {
+							// Insert Version number into the table
+							if err := m.databaseDrv.InsertVersion(version); err != nil {
+								return err
+							}
+							lastInsertVersion = version
+						} else {
+							// Just print out the version which is to be inserted
+							// send migration to dryRunPrinter channel
+							dryRunChan <- (*migr)
 						}
-						lastInsertVersion = version
 					}
 				} else {
 					// Delete Version number from the table
