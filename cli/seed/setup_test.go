@@ -49,7 +49,9 @@ func TestMain(m *testing.M) {
 	if *hasura && !*noteardown && !*reuse {
 		log.Println("tearing down test assets")
 		// teardown the hasura instance
-		teardown()
+		if err := teardown(); err != nil {
+			log.Printf("teardown failed: %v", err)
+		}
 	}
 	os.Exit(result)
 }
