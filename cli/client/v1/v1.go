@@ -2,29 +2,57 @@ package v1
 
 import (
 	"net/url"
+	"path"
 	"strings"
+)
+
+const (
+	schemaMetadataAPIEndpoint = "v1/query"
+	pgDumpAPIEndpoint         = "v1alpha1/pg_dump"
 )
 
 // Client will implement the hasura V1 API
 type Client struct {
-	*ClientMetadataAndSchema
-	*ClientPGDump
+	ServerBaseURL             url.URL
+	SchemaMetadataAPIEndpoint url.URL
+	PGDumpAPIEndpoint         url.URL
+	Headers                   map[string]string
 }
 
 // NewClient when provided a URL will return a API Client with default config
-func NewClient(hasuraAPIEndpoint string) (*Client, error) {
-	parsedHasuraAPIEndpoint, headers, err := ParseHasuraAPIEndpoint(hasuraAPIEndpoint)
+func NewClient(hasuraAPIEndpoint string, headers map[string]string) (*Client, error) {
+	parsedHasuraAPIEndpoint, parsedHeaders, err := ParseHasuraAPIEndpoint(hasuraAPIEndpoint)
 	if err != nil {
 		return nil, err
 	}
-	client := new(Client)
-	client.ClientMetadataAndSchema = NewClientMetadataAndSchema(*parsedHasuraAPIEndpoint, *headers)
-	client.ClientPGDump = NewClientPGDump(*parsedHasuraAPIEndpoint, *headers)
+	client := &Client{
+		ServerBaseURL: *parsedHasuraAPIEndpoint,
+		Headers:       make(map[string]string),
+	}
+	client.SchemaMetadataAPIEndpoint = url.URL{
+		Path:   path.Join(parsedHasuraAPIEndpoint.Path, schemaMetadataAPIEndpoint),
+		Host:   parsedHasuraAPIEndpoint.Host,
+		Scheme: parsedHasuraAPIEndpoint.Scheme,
+	}
+
+	client.PGDumpAPIEndpoint = url.URL{
+		Path:   path.Join(parsedHasuraAPIEndpoint.Path, pgDumpAPIEndpoint),
+		Host:   parsedHasuraAPIEndpoint.Host,
+		Scheme: parsedHasuraAPIEndpoint.Scheme,
+	}
+
+	// Add headers to
+	for key, value := range headers {
+		client.Headers[key] = value
+	}
+	for key, value := range parsedHeaders {
+		client.Headers[key] = value
+	}
 	return client, nil
 }
 
 // ParseHasuraAPIEndpoint and return the parsed URL and Headers (extracted from query strings)
-func ParseHasuraAPIEndpoint(hasuraAPIEndpoint string) (*url.URL, *map[string]string, error) {
+func ParseHasuraAPIEndpoint(hasuraAPIEndpoint string) (*url.URL, map[string]string, error) {
 	parsedHasuraAPIEndpoint, err := url.Parse(hasuraAPIEndpoint)
 	if err != nil {
 		return nil, nil, err
@@ -51,5 +79,5 @@ func ParseHasuraAPIEndpoint(hasuraAPIEndpoint string) (*url.URL, *map[string]str
 	}
 	parsedHasuraAPIEndpoint.Scheme = scheme
 
-	return parsedHasuraAPIEndpoint, &headers, nil
+	return parsedHasuraAPIEndpoint, headers, nil
 }

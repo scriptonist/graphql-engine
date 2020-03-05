@@ -41,10 +41,12 @@ func newSeedApplyCmd(ec *cli.ExecutionContext) *cobra.Command {
 }
 
 func (o *seedApplyOptions) run() error {
-	hasuraV1APIProvider, err := v1.NewClient(o.ec.Config.Endpoint)
+	client, err := v1.NewClient(o.ec.Config.Endpoint, map[string]string{
+		XHasuraAdminSecret: o.ec.Config.AdminSecret,
+	})
 	if err != nil {
 		return err
 	}
 	fs := afero.NewOsFs()
-	return seed.ApplySeedsToDatabase(fs, hasuraV1APIProvider.ClientMetadataAndSchema, o.ec.SeedsDirectory)
+	return seed.ApplySeedsToDatabase(fs, client, o.ec.SeedsDirectory)
 }

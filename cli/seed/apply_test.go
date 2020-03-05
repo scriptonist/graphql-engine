@@ -15,15 +15,15 @@ func TestApplySeedsToDatabase(t *testing.T) {
 		// This test want a running hasura instance
 		t.Skip()
 	}
-	client, err := v1.NewClient("http://localhost:8080")
+	client, err := v1.NewClient("http://localhost:8080", map[string]string{})
 	if err != nil {
 		t.Fatalf("Cannot create hasura client: %v", err)
 	}
 
 	type args struct {
-		fs                afero.Fs
-		hasuraAPIProvider HasuraAPIProvider
-		directoryPath     string
+		fs            afero.Fs
+		client        *v1.Client
+		directoryPath string
 	}
 	tests := []struct {
 		name    string
@@ -49,7 +49,7 @@ func TestApplySeedsToDatabase(t *testing.T) {
 					}
 					return fs
 				}(afero.NewMemMapFs()),
-				hasuraAPIProvider: client,
+				client: client,
 			},
 			wantErr: false,
 		},
@@ -72,7 +72,7 @@ func TestApplySeedsToDatabase(t *testing.T) {
 					}
 					return fs
 				}(afero.NewMemMapFs()),
-				hasuraAPIProvider: client,
+				client: client,
 			},
 			wantErr: false,
 		},
@@ -86,14 +86,14 @@ func TestApplySeedsToDatabase(t *testing.T) {
 					}
 					return fs
 				}(afero.NewMemMapFs()),
-				hasuraAPIProvider: client,
+				client: client,
 			},
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ApplySeedsToDatabase(tt.args.fs, tt.args.hasuraAPIProvider, tt.args.directoryPath); (err != nil) != tt.wantErr {
+			if err := ApplySeedsToDatabase(tt.args.fs, tt.args.client, tt.args.directoryPath); (err != nil) != tt.wantErr {
 				t.Errorf("ApplySeedsToDatabase() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
