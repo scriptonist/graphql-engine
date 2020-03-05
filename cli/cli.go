@@ -93,6 +93,8 @@ type Config struct {
 	MetadataDirectory string `yaml:"metadata_directory"`
 	// MigrationsDirectory defines the directory where the migration files were stored.
 	MigrationsDirectory string `yaml:"migrations_directory,omitempty"`
+	// SeedsDirectory is the directory where seeds will be stored
+	SeedsDirectory string `yaml:"seeds_directory,omitempty"`
 	// ActionConfig defines the config required to create or generate codegen for an action.
 	ActionConfig types.ActionExecutionConfig `yaml:"actions"`
 }
@@ -408,6 +410,7 @@ func (ec *ExecutionContext) readConfig() error {
 	v.SetDefault("access_key", "")
 	v.SetDefault("metadata_directory", "")
 	v.SetDefault("migrations_directory", "migrations")
+	v.SetDefault("seeds_directory", "seeds")
 	v.SetDefault("actions.kind", "synchronous")
 	v.SetDefault("actions.handler_webhook_baseurl", "http://localhost:3000")
 	v.SetDefault("actions.codegen.framework", "")
@@ -430,6 +433,7 @@ func (ec *ExecutionContext) readConfig() error {
 		},
 		MetadataDirectory:   v.GetString("metadata_directory"),
 		MigrationsDirectory: v.GetString("migrations_directory"),
+		SeedsDirectory:      v.GetString("seeds_directory"),
 		ActionConfig: types.ActionExecutionConfig{
 			Kind:                  v.GetString("actions.kind"),
 			HandlerWebhookBaseURL: v.GetString("actions.handler_webhook_baseurl"),
