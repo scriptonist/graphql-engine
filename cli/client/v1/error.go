@@ -6,13 +6,6 @@ import (
 	"strings"
 )
 
-type ErrorKind int
-
-const (
-	KindAPIError ErrorKind = iota
-	KindGoError
-)
-
 type Error struct {
 	// Go Error
 	Err    error
