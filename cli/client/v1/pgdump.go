@@ -10,7 +10,7 @@ import (
 // ClientPGDump API
 
 // SendPGDumpQuery --
-func (client *Client) SendPGDumpQuery(m interface{}) (resp *http.Response, body []byte, err error) {
+func (client *Client) SendPGDumpQuery(m interface{}) (*http.Response, []byte, *Error) {
 	request := gorequest.New()
 
 	request = request.Post(client.PGDumpAPIEndpoint.String()).Send(m)

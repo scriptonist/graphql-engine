@@ -1,9 +1,7 @@
 package commands
 
 import (
-	"encoding/json"
-	"net/http"
-
+	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/hasura/graphql-engine/cli"
 	v1 "github.com/hasura/graphql-engine/cli/client/v1"
 	"github.com/hasura/graphql-engine/cli/metadata/actions/editor"
@@ -12,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 type seedNewOptions struct {
@@ -25,7 +22,6 @@ type seedNewOptions struct {
 }
 
 func newSeedCreateCmd(ec *cli.ExecutionContext) *cobra.Command {
-	v := viper.New()
 	opts := seedNewOptions{
 		ec: ec,
 	}
@@ -34,14 +30,22 @@ func newSeedCreateCmd(ec *cli.ExecutionContext) *cobra.Command {
 		Short:        "create a new seed file",
 		SilenceUsage: false,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			ec.Viper = v
 			return ec.Validate()
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.seedname = args[0]
-			return opts.run()
+			if len(args) > 0 {
+				opts.seedname = args[0]
+			} else {
+				opts.seedname = namesgenerator.GetRandomName(0)
+			}
+			err := opts.run()
+			if err != nil {
+				return err
+			}
+			ec.Logger.Info("created seed file successfully")
+			return nil
+
 		},
-		Args: cobra.ExactArgs(1),
 	}
 
 	cmd.Flags().StringArrayVar(&opts.fromTableNames, "from-tables", []string{}, "name of table from which seed file has to be initialized")
@@ -63,7 +67,7 @@ func (o *seedNewOptions) run() error {
 			XHasuraAdminSecret: o.ec.Config.AdminSecret,
 		})
 		if err != nil {
-			return err
+			return errors.Wrap(err, "cannot initialize hasura client")
 		}
 		// Send a pg dump query to dump just sql
 		pgDumpOpts := []string{"--no-owner", "--no-acl", "--data-only", "--inserts"}
@@ -75,18 +79,9 @@ func (o *seedNewOptions) run() error {
 			CleanOutput: true,
 		}
 		// Send the query
-		resp, body, err := client.SendPGDumpQuery(query)
-
-		var horror hasuradb.HasuraError
-		if resp.StatusCode != http.StatusOK {
-			err = json.Unmarshal(body, &horror)
-			if err != nil {
-				return err
-			}
-			return errors.New(string(body))
-		}
-		if err != nil {
-			return errors.New(string(body))
+		_, body, err := client.SendPGDumpQuery(query)
+		if err != (*v1.Error)(nil) {
+			return errors.Wrap(err, "error executing operation")
 		}
 		createSeedOpts.Data = body
 	} else {
