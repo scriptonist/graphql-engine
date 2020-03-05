@@ -11,6 +11,7 @@ require (
 	github.com/aws/aws-sdk-go v1.25.50 // indirect
 	github.com/briandowns/spinner v1.8.0
 	github.com/disintegration/imaging v1.6.2 // indirect
+	github.com/docker/docker v1.13.1
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/elazarl/goproxy v0.0.0-20191011121108-aa519ddbe484 // indirect
 	github.com/fatih/color v1.7.0

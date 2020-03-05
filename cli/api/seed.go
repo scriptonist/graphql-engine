@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/afero"
 
+	"github.com/docker/docker/pkg/namesgenerator"
 	"github.com/hasura/graphql-engine/cli/seed"
 
 	"github.com/gin-gonic/gin"
@@ -28,12 +29,11 @@ func CreateSeedAPIHandler(c *gin.Context) {
 	// bind request to struct var
 	var requestData CreateSeedRequest
 	if err := c.Bind(&requestData); err != nil {
-		c.JSON(400, CreateSeedResponse{"bad request format"})
+		c.JSON(400, CreateSeedResponse{fmt.Errorf("bad request: %w", err).Error()})
 		return
 	}
 	if requestData.Filename == "" {
-		c.JSON(400, CreateSeedResponse{"bad request format"})
-		return
+		requestData.Filename = namesgenerator.GetRandomName(0)
 	}
 	seedDirectory, ok := c.Get("seedDirectory")
 	if !ok {
