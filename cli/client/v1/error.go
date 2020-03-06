@@ -7,7 +7,6 @@ import (
 )
 
 type Error struct {
-	// Go Error
 	Err    error
 	ErrAPI APIError
 }

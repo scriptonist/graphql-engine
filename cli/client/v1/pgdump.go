@@ -7,8 +7,6 @@ import (
 	"github.com/parnurzeal/gorequest"
 )
 
-// ClientPGDump API
-
 // SendPGDumpQuery --
 func (client *Client) SendPGDumpQuery(m interface{}) (*http.Response, []byte, *Error) {
 	request := gorequest.New()
@@ -32,6 +30,5 @@ func (client *Client) SendPGDumpQuery(m interface{}) (*http.Response, []byte, *E
 		}
 		return nil, nil, E(apiError)
 	}
-
 	return resp, body, nil
 }
