@@ -11,9 +11,13 @@ func NewSeedCmd(ec *cli.ExecutionContext) *cobra.Command {
 	v := viper.New()
 	ec.Viper = v
 	seedCmd := &cobra.Command{
-		Use:          "seed",
-		Short:        "work with seed data",
-		Long:         "",
+		Use:     "seed",
+		Aliases: []string{"seeds", "sd"},
+		Short:   "Manage seed data",
+		Long: `Seed command let's you create and manage data seed files which can be used
+to initialize the database with some data. The files can contain SQL statements
+which will be executed when the seed is applied. Seeds will be applied in
+alphabetical order of the filenames.`,
 		SilenceUsage: true,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			err := ec.Prepare()

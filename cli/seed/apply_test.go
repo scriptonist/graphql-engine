@@ -93,7 +93,7 @@ func TestApplySeedsToDatabase(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ApplySeedsToDatabase(tt.args.fs, tt.args.client, tt.args.directoryPath); (err != nil) != tt.wantErr {
+			if err := ApplySeedsToDatabase(tt.args.fs, tt.args.client, tt.args.directoryPath, ""); (err != nil) != tt.wantErr {
 				t.Errorf("ApplySeedsToDatabase() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

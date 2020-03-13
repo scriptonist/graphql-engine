@@ -1,15 +1,20 @@
 package commands
 
 import (
-	"github.com/hasura/graphql-engine/cli"
-	v1 "github.com/hasura/graphql-engine/cli/client/v1"
-	"github.com/hasura/graphql-engine/cli/seed"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+
+	"github.com/hasura/graphql-engine/cli"
+	"github.com/hasura/graphql-engine/cli/seed"
+
+	v1 "github.com/hasura/graphql-engine/cli/client/v1"
 )
 
 type seedApplyOptions struct {
 	ec *cli.ExecutionContext
+
+	// seed file to apply
+	fileName string
 }
 
 func newSeedApplyCmd(ec *cli.ExecutionContext) *cobra.Command {
@@ -17,8 +22,13 @@ func newSeedApplyCmd(ec *cli.ExecutionContext) *cobra.Command {
 		ec: ec,
 	}
 	cmd := &cobra.Command{
-		Use:          "apply",
-		Short:        "apply seed",
+		Use:   "apply",
+		Short: "Apply seeds on the datase",
+		Example: `  # Apply all seeds on the database:
+  hasura seed apply
+
+  # Apply only a particular file:
+  hasura seed apply --file seeds/1234_new_table.sql`,
 		SilenceUsage: false,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			return ec.Validate()
@@ -34,6 +44,8 @@ func newSeedApplyCmd(ec *cli.ExecutionContext) *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().StringVarP(&opts.fileName, "file", "f", "", "seed file to apply")
+
 	return cmd
 }
 
@@ -45,5 +57,5 @@ func (o *seedApplyOptions) run() error {
 		return err
 	}
 	fs := afero.NewOsFs()
-	return seed.ApplySeedsToDatabase(fs, client, o.ec.SeedsDirectory)
+	return seed.ApplySeedsToDatabase(fs, client, o.ec.SeedsDirectory, o.fileName)
 }

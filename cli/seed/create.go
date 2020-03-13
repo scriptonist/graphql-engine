@@ -2,7 +2,6 @@ package seed
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -30,7 +29,7 @@ func CreateSeedFile(fs afero.Fs, opts CreateSeedOpts) (*string, error) {
 	fullFilePath := filepath.Join(opts.DirectoryPath, filenameWithTimeStamp)
 
 	// Write contents to file
-	err := afero.WriteFile(fs, fullFilePath, opts.Data, os.ModePerm)
+	err := afero.WriteFile(fs, fullFilePath, opts.Data, 0644)
 	if err != nil {
 		return nil, err
 	}
