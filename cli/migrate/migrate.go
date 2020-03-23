@@ -39,10 +39,10 @@ var (
 	ErrLocked           = fmt.Errorf("database locked")
 	ErrNoMigrationFiles = fmt.Errorf("no migration files found")
 	ErrLockTimeout      = fmt.Errorf("timeout: can't acquire database lock")
-	ErrApplied          = fmt.Errorf("Version already applied in database")
-	ErrNotApplied       = fmt.Errorf("Migration not applied in database")
-	ErrNoMigrationMode  = fmt.Errorf("Migration mode is disabled")
-	ErrMigrationMode    = fmt.Errorf("Migration mode is enabled")
+	ErrApplied          = fmt.Errorf("version already applied in database")
+	ErrNotApplied       = fmt.Errorf("migration not applied in database")
+	ErrNoMigrationMode  = fmt.Errorf("migration mode is disabled")
+	ErrMigrationMode    = fmt.Errorf("migration mode is enabled")
 )
 
 // ErrShortLimit is an error returned when not enough migrations
