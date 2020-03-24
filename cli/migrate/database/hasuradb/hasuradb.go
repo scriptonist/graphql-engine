@@ -12,11 +12,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/parnurzeal/gorequest"
+
 	yaml "github.com/ghodss/yaml"
+	v1Client "github.com/hasura/graphql-engine/cli/client/v1"
 	"github.com/hasura/graphql-engine/cli/metadata/types"
 	"github.com/hasura/graphql-engine/cli/migrate/database"
 	"github.com/oliveagle/jsonpath"
-	"github.com/parnurzeal/gorequest"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -56,6 +58,7 @@ type HasuraDB struct {
 	jsonPath       map[string]string
 	isLocked       bool
 	logger         *log.Logger
+	hasuraClient   *v1Client.Client
 }
 
 func WithInstance(config *Config, logger *log.Logger) (database.Driver, error) {
@@ -179,50 +182,50 @@ func (h *HasuraDB) UnLock() error {
 		return nil
 	}
 
-	resp, body, err := h.sendv1Query(h.migrationQuery)
-	if err != nil {
-		return err
-	}
-
-	var horror HasuraError
-	if resp.StatusCode != http.StatusOK {
-		err = json.Unmarshal(body, &horror)
-		if err != nil {
-			return fmt.Errorf("failed parsing json: %v; response from API: %s", err, string(body))
+	_, _, v1ClientErr := h.hasuraClient.SendQuery(h.migrationQuery)
+	if v1ClientErr != nil {
+		if v1ClientErr.Err != nil {
+			return v1ClientErr
 		}
 
-		// Handle migration version here
-		if horror.Path != "" {
-			jsonData, err := json.Marshal(h.migrationQuery)
-			if err != nil {
-				return err
-			}
-			var migrationQuery interface{}
-			err = json.Unmarshal(jsonData, &migrationQuery)
-			if err != nil {
-				return err
-			}
-			res, err := jsonpath.JsonPathLookup(migrationQuery, horror.Path)
-			if err == nil {
-				queryData, err := json.MarshalIndent(res, "", "    ")
+		if v1ClientErr.ErrAPI != nil {
+			// Handle migration version here
+			if v1ClientErr.ErrAPI.Path != "" {
+				jsonData, err := json.Marshal(h.migrationQuery)
 				if err != nil {
 					return err
 				}
-				horror.migrationQuery = string(queryData)
-			}
-			re1, err := regexp.Compile(`\$.args\[([0-9]+)\]*`)
-			if err != nil {
-				return err
-			}
-			result := re1.FindAllStringSubmatch(horror.Path, -1)
-			if len(result) != 0 {
-				migrationNumber, ok := h.jsonPath[result[0][1]]
-				if ok {
-					horror.migrationFile = migrationNumber
+				var migrationQuery interface{}
+				err = json.Unmarshal(jsonData, &migrationQuery)
+				if err != nil {
+					return err
+				}
+				res, err := jsonpath.JsonPathLookup(migrationQuery, v1ClientErr.ErrAPI.Path)
+				if err == nil {
+					queryData, err := json.MarshalIndent(res, "", "    ")
+					if err != nil {
+						return err
+					}
+					v1ClientErr.ErrAPI.MigrationQuery = string(queryData)
+				}
+				re1, err := regexp.Compile(`\$.args\[([0-9]+)\]*`)
+				if err != nil {
+					return err
+				}
+				result := re1.FindAllStringSubmatch(v1ClientErr.ErrAPI.Path, -1)
+				if len(result) != 0 {
+					migrationNumber, ok := h.jsonPath[result[0][1]]
+					if ok {
+						v1ClientErr.ErrAPI.MigrationFile = migrationNumber
+					}
 				}
 			}
+			if v1ClientErr.ErrAPI != nil && !h.config.isCMD {
+				// If the it's not executed by CLI dump the whole JSON error string
+				return v1ClientErr.ErrAPIJSON()
+			}
+			return v1ClientErr
 		}
-		return horror.Error(h.config.isCMD)
 	}
 	return nil
 }
