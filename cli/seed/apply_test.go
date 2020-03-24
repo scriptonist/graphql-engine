@@ -15,7 +15,7 @@ func TestApplySeedsToDatabase(t *testing.T) {
 		// This test want a running hasura instance
 		t.Skip()
 	}
-	client, err := v1.NewClient("http://localhost:8080", map[string]string{})
+	client, err := v1.NewClient("http://localhost:8080/", nil, map[string]string{})
 	if err != nil {
 		t.Fatalf("Cannot create hasura client: %v", err)
 	}

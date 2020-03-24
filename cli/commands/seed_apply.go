@@ -50,7 +50,7 @@ func newSeedApplyCmd(ec *cli.ExecutionContext) *cobra.Command {
 }
 
 func (o *seedApplyOptions) run() error {
-	client, err := v1.NewClient(o.ec.Config.Endpoint, map[string]string{
+	client, err := v1.NewClient(o.ec.Config.Endpoint, nil, map[string]string{
 		XHasuraAdminSecret: o.ec.Config.AdminSecret,
 	})
 	if err != nil {

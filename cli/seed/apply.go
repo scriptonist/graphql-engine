@@ -14,7 +14,7 @@ import (
 )
 
 // ApplySeedsToDatabase will read all .sql files in the given
-// direc tory and apply it to hasura
+// directory and apply it to hasura
 func ApplySeedsToDatabase(fs afero.Fs, client *v1.Client, directoryPath string, fileName string) error {
 	if client == nil {
 		return fmt.Errorf("Fatal error: hasura client not provided")
@@ -63,13 +63,14 @@ func ApplySeedsToDatabase(fs afero.Fs, client *v1.Client, directoryPath string, 
 		}
 	}
 
-	resp, b, err := client.SendQuery(seedQuery)
-	if err != (*v1.Error)(nil) {
-		return errors.Wrap(err, "error running hasura query")
+	resp, b, v1ClientErr := client.SendQuery(seedQuery)
+	if v1ClientErr != nil {
+		return errors.Wrap(v1ClientErr, "error running hasura query")
 	}
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.Wrap(errors.New("error executing hasura query"), string(b))
+	if resp != nil {
+		if resp.StatusCode != http.StatusOK {
+			return errors.Wrap(errors.New("error executing hasura query"), string(b))
+		}
 	}
 	return nil
 }
