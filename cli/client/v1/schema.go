@@ -2,23 +2,28 @@ package v1
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
-
-	"github.com/parnurzeal/gorequest"
 )
 
-// SendQuery does what the name implies
-func (client *Client) SendQuery(m interface{}) (*http.Response, []byte, *Error) {
-	request := gorequest.New()
-	request = request.Post(client.SchemaMetadataAPIEndpoint.String()).Send(m)
+const schemaMetadataAPIEndpoint = "v1/query"
 
-	for headerName, headerValue := range client.Headers {
-		request.Set(headerName, headerValue)
+// SendQuery does what the name implies
+func (c *Client) SendQuery(m interface{}) (*http.Response, []byte, *Error) {
+	request, err := c.NewRequest("POST", schemaMetadataAPIEndpoint, m)
+	if err != nil {
+		return nil, nil, E(err)
 	}
 
-	resp, body, errs := request.EndBytes()
-	if len(errs) != 0 {
-		return resp, body, E(errs[0])
+	resp, err := c.client.Do(request)
+	if err != nil {
+		return nil, nil, E(err)
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, nil, E(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
