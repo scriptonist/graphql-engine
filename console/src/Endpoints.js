@@ -19,7 +19,7 @@ const Endpoints = {
   telemetryServer: 'wss://telemetry.hasura.io/v1/ws',
 };
 
-const globalCookiePolicy = 'omit';
+const globalCookiePolicy = 'same-origin';
 
 export default Endpoints;
 export { globalCookiePolicy, baseUrl, hasuractlUrl };
