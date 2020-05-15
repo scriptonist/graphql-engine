@@ -39,6 +39,7 @@ func NewAPIServer(address string, port string, ec *cli.ExecutionContext) (*APISe
 	router.Use(allowCors())
 
 	apiServer := &APIServer{Router: router, Migrate: migrate, Address: address, Port: port, EC: ec}
+	apiServer.Router.Use(verifyAdminSecret(ec))
 	apiServer.setRoutes(ec.MigrationDir, ec.Logger)
 	return apiServer, nil
 }
@@ -113,6 +114,17 @@ func (r *APIServer) setLogger(logger *logrus.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("logger", logger)
 		c.Next()
+	}
+}
+
+func verifyAdminSecret(ec *cli.ExecutionContext) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if ec.Config.ServerConfig.AdminSecret != "" {
+			if c.GetHeader(XHasuraAdminSecret) != ec.Config.ServerConfig.AdminSecret {
+				//reject
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
+			}
+		}
 	}
 }
 

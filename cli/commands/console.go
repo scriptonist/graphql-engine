@@ -52,7 +52,7 @@ func NewConsoleCmd(ec *cli.ExecutionContext) *cobra.Command {
 		},
 	}
 	f := consoleCmd.Flags()
-
+	f.SortFlags = false
 	f.StringVar(&opts.APIPort, "api-port", "9693", "port for serving migrate api")
 	f.StringVar(&opts.ConsolePort, "console-port", "9695", "port for serving console")
 	f.StringVar(&opts.Address, "address", "localhost", "address to serve console and migrate api from")
@@ -121,18 +121,6 @@ func (o *ConsoleOptions) Run() error {
 		o.ServerExternalEndpoint = o.EC.Config.ServerConfig.Endpoint
 	}
 
-	// My Router struct
-	r := &cRouter{
-		g,
-		t,
-	}
-
-	r.router.Use(verifyAdminSecret())
-	r.setRoutes(o.EC.MigrationDir, o.EC.Logger)
-
-	consoleTemplateVersion := o.EC.Version.GetConsoleTemplateVersion()
-	consoleAssetsVersion := o.EC.Version.GetConsoleAssetsVersion()
-
 	o.EC.Logger.Debugf("rendering console template [%s] with assets [%s]", consoleTemplateVersion, consoleAssetsVersion)
 
 	adminSecretHeader := cli.GetAdminSecretHeaderName(o.EC.Version)
@@ -181,15 +169,4 @@ func (o *ConsoleOptions) Run() error {
 	}
 
 	return console.Serve(serveOpts)
-}
-
-func verifyAdminSecret() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if ec.Config.ServerConfig.AdminSecret != "" {
-			if c.GetHeader(XHasuraAdminSecret) != ec.Config.ServerConfig.AdminSecret {
-				//reject
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
-			}
-		}
-	}
 }
