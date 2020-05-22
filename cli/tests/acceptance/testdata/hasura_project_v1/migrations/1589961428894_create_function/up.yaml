@@ -1,0 +1,17 @@
+- args:
+    cascade: false
+    read_only: false
+    sql: |-
+      CREATE FUNCTION search_article(search text)
+      RETURNS SETOF article AS $$
+          SELECT *
+          FROM article
+          WHERE
+            title ilike ('%' || search || '%')
+            OR content ilike ('%' || search || '%')
+      $$ LANGUAGE sql STABLE;
+  type: run_sql
+- args:
+    name: search_article
+    schema: public
+  type: track_function
