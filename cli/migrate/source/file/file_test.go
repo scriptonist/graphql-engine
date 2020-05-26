@@ -71,7 +71,7 @@ func TestOpen(t *testing.T) {
 	mustWriteFile(t, tmpDir, "1_foobar.down.sql", "")
 
 	if !filepath.IsAbs(tmpDir) {
-		t.Fatal("expected tmpDir to be absolute path")
+		t.Fatal("expected tmpDir to be absolute Path")
 	}
 
 	logger, _ := test.NewNullLogger()
@@ -150,7 +150,7 @@ func TestOpenDefaultsToCurrentDirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if d.(*File).path != wd {
+	if d.(*File).Path != wd {
 		t.Fatal("expected driver to default to current directory")
 	}
 }

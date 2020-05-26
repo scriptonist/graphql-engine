@@ -18,7 +18,7 @@ import (
 
 type File struct {
 	url           string
-	path          string
+	Path          string
 	defaultParser source.Parser
 	Migrations    *source.Migrations
 	logger        *log.Logger
@@ -64,7 +64,7 @@ func New(url string, logger *log.Logger) (*File, error) {
 	nf := &File{
 		url:           url,
 		logger:        logger,
-		path:          p,
+		Path:          p,
 		defaultParser: source.DefaultParse,
 		Migrations:    source.NewMigrations(),
 	}
@@ -86,7 +86,7 @@ func (f *File) DefaultParser(p source.Parser) {
 
 func (f *File) Scan() error {
 	f.Migrations = source.NewMigrations()
-	folders, err := ioutil.ReadDir(f.path)
+	folders, err := ioutil.ReadDir(f.Path)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (f *File) Scan() error {
 		if fo.IsDir() {
 			// v2 migrate
 			dirName := fo.Name()
-			dirPath := filepath.Join(f.path, dirName)
+			dirPath := filepath.Join(f.Path, dirName)
 			files, err := ioutil.ReadDir(dirPath)
 			if err != nil {
 				return err
@@ -111,7 +111,7 @@ func (f *File) Scan() error {
 				}
 				m.Raw = filepath.Join(dirName, fi.Name())
 				m.IsDir = true
-				ok, err := source.IsEmptyFile(m, f.path)
+				ok, err := source.IsEmptyFile(m, f.Path)
 				if err != nil {
 					return err
 				}
@@ -130,7 +130,7 @@ func (f *File) Scan() error {
 				continue // ignore files that we can't parse
 			}
 			m.Raw = fo.Name()
-			ok, err := source.IsEmptyFile(m, f.path)
+			ok, err := source.IsEmptyFile(m, f.Path)
 			if err != nil {
 				return err
 			}
@@ -148,7 +148,7 @@ func (f *File) Scan() error {
 
 func (f *File) First() (version uint64, err error) {
 	if v, ok := f.Migrations.First(); !ok {
-		return 0, &os.PathError{Op: "first", Path: f.path, Err: os.ErrNotExist}
+		return 0, &os.PathError{Op: "first", Path: f.Path, Err: os.ErrNotExist}
 	} else {
 		return v, nil
 	}
@@ -164,7 +164,7 @@ func (f *File) GetUnappliedMigrations(version uint64) (versions []uint64) {
 
 func (f *File) Prev(version uint64) (prevVersion uint64, err error) {
 	if v, ok := f.Migrations.Prev(version); !ok {
-		return 0, &os.PathError{Op: fmt.Sprintf("prev for version %v", version), Path: f.path, Err: os.ErrNotExist}
+		return 0, &os.PathError{Op: fmt.Sprintf("prev for version %v", version), Path: f.Path, Err: os.ErrNotExist}
 	} else {
 		return v, nil
 	}
@@ -172,7 +172,7 @@ func (f *File) Prev(version uint64) (prevVersion uint64, err error) {
 
 func (f *File) Next(version uint64) (nextVersion uint64, err error) {
 	if v, ok := f.Migrations.Next(version); !ok {
-		return 0, &os.PathError{Op: fmt.Sprintf("next for version %v", version), Path: f.path, Err: os.ErrNotExist}
+		return 0, &os.PathError{Op: fmt.Sprintf("next for version %v", version), Path: f.Path, Err: os.ErrNotExist}
 	} else {
 		return v, nil
 	}
@@ -184,46 +184,46 @@ func (f *File) GetDirections(version uint64) map[source.Direction]bool {
 
 func (f *File) ReadUp(version uint64) (r io.ReadCloser, identifier string, fileName string, err error) {
 	if m, ok := f.Migrations.Up(version); ok {
-		r, err := os.Open(path.Join(f.path, m.Raw))
+		r, err := os.Open(path.Join(f.Path, m.Raw))
 		if err != nil {
 			return nil, "", "", err
 		}
 		return r, m.Identifier, m.Raw, nil
 	}
-	return nil, "", "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.path, Err: os.ErrNotExist}
+	return nil, "", "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.Path, Err: os.ErrNotExist}
 }
 
 func (f *File) ReadMetaUp(version uint64) (r io.ReadCloser, identifier string, fileName string, err error) {
 	if m, ok := f.Migrations.MetaUp(version); ok {
-		r, err := os.Open(path.Join(f.path, m.Raw))
+		r, err := os.Open(path.Join(f.Path, m.Raw))
 		if err != nil {
 			return nil, "", "", err
 		}
 		return r, m.Identifier, m.Raw, nil
 	}
-	return nil, "", "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.path, Err: os.ErrNotExist}
+	return nil, "", "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.Path, Err: os.ErrNotExist}
 }
 
 func (f *File) ReadDown(version uint64) (r io.ReadCloser, identifier string, fileName string, err error) {
 	if m, ok := f.Migrations.Down(version); ok {
-		r, err := os.Open(path.Join(f.path, m.Raw))
+		r, err := os.Open(path.Join(f.Path, m.Raw))
 		if err != nil {
 			return nil, "", "", err
 		}
 		return r, m.Identifier, m.Raw, nil
 	}
-	return nil, "", "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.path, Err: os.ErrNotExist}
+	return nil, "", "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.Path, Err: os.ErrNotExist}
 }
 
 func (f *File) ReadMetaDown(version uint64) (r io.ReadCloser, identifier string, fileName string, err error) {
 	if m, ok := f.Migrations.MetaDown(version); ok {
-		r, err := os.Open(path.Join(f.path, m.Raw))
+		r, err := os.Open(path.Join(f.Path, m.Raw))
 		if err != nil {
 			return nil, "", "", err
 		}
 		return r, m.Identifier, m.Raw, nil
 	}
-	return nil, "", "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.path, Err: os.ErrNotExist}
+	return nil, "", "", &os.PathError{Op: fmt.Sprintf("read version %v", version), Path: f.Path, Err: os.ErrNotExist}
 }
 
 func (f *File) ReadName(version uint64) (name string) {
