@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/hasura/graphql-engine/cli"
 	"github.com/hasura/graphql-engine/cli/metadata"
 	metadataTypes "github.com/hasura/graphql-engine/cli/metadata/types"
@@ -95,16 +97,16 @@ func (o *migrateCreateOptions) run() (version int64, err error) {
 
 	if o.fromServer {
 		o.sqlServer = true
-		if o.EC.Config.Version == cli.V1 {
+		if o.EC.Config.Version == config.V1 {
 			o.metaDataServer = true
 		}
 	}
 
-	if o.flags.Changed("metadata-from-file") && o.EC.Config.Version != cli.V1 {
+	if o.flags.Changed("metadata-from-file") && o.EC.Config.Version != config.V1 {
 		return 0, errors.New("metadata-from-file flag can be set only with config version 1")
 	}
 
-	if o.flags.Changed("metadata-from-server") && o.EC.Config.Version != cli.V1 {
+	if o.flags.Changed("metadata-from-server") && o.EC.Config.Version != config.V1 {
 		return 0, errors.New("metadata-from-server flag can be set only with config version 1")
 	}
 
@@ -175,13 +177,13 @@ func (o *migrateCreateOptions) run() (version int64, err error) {
 		}
 	}
 
-	if !o.flags.Changed("sql-from-file") && !o.flags.Changed("metadata-from-file") && !o.metaDataServer && !o.sqlServer && o.EC.Config.Version == cli.V1 {
+	if !o.flags.Changed("sql-from-file") && !o.flags.Changed("metadata-from-file") && !o.metaDataServer && !o.sqlServer && o.EC.Config.Version == config.V1 {
 		// Set empty data for [up|down].yaml
 		createOptions.MetaUp = []byte(`[]`)
 		createOptions.MetaDown = []byte(`[]`)
 	}
 
-	if !o.flags.Changed("sql-from-file") && !o.flags.Changed("metadata-from-file") && !o.metaDataServer && !o.sqlServer && o.EC.Config.Version != cli.V1 {
+	if !o.flags.Changed("sql-from-file") && !o.flags.Changed("metadata-from-file") && !o.metaDataServer && !o.sqlServer && o.EC.Config.Version != config.V1 {
 		// Set empty data for [up|down].sql
 		createOptions.SQLUp = []byte(``)
 		createOptions.SQLDown = []byte(``)

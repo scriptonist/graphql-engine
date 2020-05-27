@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/hasura/graphql-engine/cli/metadata"
 	"github.com/hasura/graphql-engine/cli/metadata/actions"
 	"github.com/hasura/graphql-engine/cli/metadata/allowlist"
@@ -127,7 +129,7 @@ func NewMigrate(ec *cli.ExecutionContext, isCmd bool) (*Migrate, error) {
 	}
 	// Set Plugins
 	SetMetadataPluginsWithDir(ec, t)
-	if ec.Config.Version == cli.V2 {
+	if ec.Config.Version == config.V2 {
 		t.EnableCheckMetadataConsistency(true)
 	}
 	return t, nil
@@ -164,7 +166,7 @@ func SetMetadataPluginsWithDir(ec *cli.ExecutionContext, drv *Migrate, dir ...st
 		metadataDir = dir[0]
 	}
 	plugins := make(types.MetadataPlugins, 0)
-	if ec.Config.Version == cli.V2 && metadataDir != "" {
+	if ec.Config.Version == config.V2 && metadataDir != "" {
 		plugins = append(plugins, version.New(ec, metadataDir))
 		plugins = append(plugins, tables.New(ec, metadataDir))
 		plugins = append(plugins, functions.New(ec, metadataDir))

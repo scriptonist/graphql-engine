@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/hasura/graphql-engine/cli/migrate"
 
 	"gopkg.in/yaml.v2"
@@ -55,13 +57,13 @@ func newScriptsUpdateConfigV2Cmd(ec *cli.ExecutionContext) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if cmd.Root().PersistentFlags().Changed("config-file") && ec.Config.Version == cli.V1 {
+			if cmd.Root().PersistentFlags().Changed("config-file") && ec.Config.Version == config.V1 {
 				return fmt.Errorf("invalid config version | --config-file flag only supported from config version 2")
 			}
 			return nil
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if ec.Config.Version != cli.V1 {
+			if ec.Config.Version != config.V1 {
 				return fmt.Errorf("this script can be executed only when the current config version is 1")
 			}
 			// update the plugin index
@@ -331,12 +333,12 @@ func newScriptsUpdateConfigV2Cmd(ec *cli.ExecutionContext) *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "cannot read config file")
 			}
-			var cfg cli.Config
+			var cfg config.Config
 			err = yaml.Unmarshal(cfgByt, &cfg)
 			if err != nil {
 				return errors.Wrap(err, "cannot parse config file")
 			}
-			cfg.Version = cli.V2
+			cfg.Version = config.V2
 			cfg.MetadataDirectory = ec.Viper.GetString("metadata_directory")
 			cfg.ActionConfig = &types.ActionExecutionConfig{
 				Kind:                  ec.Viper.GetString("actions.kind"),

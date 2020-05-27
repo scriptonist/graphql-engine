@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/hasura/graphql-engine/cli"
 	"github.com/hasura/graphql-engine/cli/util"
 	"github.com/spf13/cobra"
@@ -30,7 +32,7 @@ func NewActionsCmd(ec *cli.ExecutionContext) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if ec.Config.Version < cli.V2 {
+			if ec.Config.Version < config.V2 {
 				return fmt.Errorf("actions commands can be executed only when config version is greater than 1")
 			}
 			if ec.MetadataDir == "" {

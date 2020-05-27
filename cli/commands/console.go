@@ -5,6 +5,8 @@ import (
 	"os"
 	"sync"
 
+	"github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/hasura/graphql-engine/cli/util"
 
 	"github.com/gin-gonic/gin"
@@ -50,7 +52,7 @@ func NewConsoleCmd(ec *cli.ExecutionContext) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if cmd.Root().PersistentFlags().Changed("config-file") && ec.Config.Version == cli.V1 {
+			if cmd.Root().PersistentFlags().Changed("config-file") && ec.Config.Version == config.V1 {
 				return fmt.Errorf("invalid config version | --config-file flag only supported from config version 2")
 			}
 			return nil

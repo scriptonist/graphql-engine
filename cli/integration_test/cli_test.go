@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/briandowns/spinner"
 	"github.com/hasura/graphql-engine/cli"
 	"github.com/hasura/graphql-engine/cli/commands"
@@ -29,7 +31,7 @@ func TestCommands(t *testing.T) {
 	t.Run("config=v1", func(t *testing.T) {
 		// Initialize ec
 		ec := cli.NewExecutionContext()
-		ec.Config = &cli.Config{}
+		ec.Config = &config.Config{}
 		logger, _ := test.NewNullLogger()
 		ec.Logger = logger
 		ec.Spinner = spinner.New(spinner.CharSets[7], 100*time.Millisecond)
@@ -75,7 +77,7 @@ func TestCommands(t *testing.T) {
 	// Run tests only for config version v2
 	t.Run("config=v2", func(t *testing.T) {
 		ec := cli.NewExecutionContext()
-		ec.Config = &cli.Config{}
+		ec.Config = &config.Config{}
 		logger, _ := test.NewNullLogger()
 		ec.Logger = logger
 		ec.Spinner = spinner.New(spinner.CharSets[7], 100*time.Millisecond)

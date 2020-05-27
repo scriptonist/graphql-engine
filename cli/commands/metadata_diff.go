@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/hasura/graphql-engine/cli/migrate"
 
 	"github.com/aryann/difflib"
@@ -203,7 +205,7 @@ func (o *MetadataDiffOptions) runv1(args []string) error {
 }
 
 func (o *MetadataDiffOptions) Run() error {
-	if o.EC.Config.Version == cli.V2 && o.EC.MetadataDir != "" {
+	if o.EC.Config.Version == config.V2 && o.EC.MetadataDir != "" {
 		return o.runv2(o.Args)
 	}
 	return o.runv1(o.Args)

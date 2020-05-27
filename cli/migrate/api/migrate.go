@@ -10,8 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/gin-gonic/gin"
-	"github.com/hasura/graphql-engine/cli"
 	"github.com/hasura/graphql-engine/cli/migrate"
 	"github.com/hasura/graphql-engine/cli/migrate/cmd"
 	"github.com/hasura/graphql-engine/cli/migrate/database/hasuradb"
@@ -96,7 +97,7 @@ func MigrateAPI(c *gin.Context) {
 		timestamp := startTime.UnixNano() / int64(time.Millisecond)
 
 		createOptions := cmd.New(timestamp, request.Name, sourceURL.Path)
-		if version != int(cli.V1) {
+		if version != int(config.V1) {
 			sqlUp := &bytes.Buffer{}
 			sqlDown := &bytes.Buffer{}
 			for _, arg := range request.Up {

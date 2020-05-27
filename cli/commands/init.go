@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	config2 "github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/hasura/graphql-engine/cli/metadata/actions"
 	"github.com/hasura/graphql-engine/cli/metadata/actions/types"
 	"github.com/hasura/graphql-engine/cli/metadata/allowlist"
@@ -62,7 +64,7 @@ func NewInitCmd(ec *cli.ExecutionContext) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if cmd.Root().PersistentFlags().Changed("config-file") && opts.Version == cli.V1 {
+			if cmd.Root().PersistentFlags().Changed("config-file") && opts.Version == config2.V1 {
 				return fmt.Errorf("invalid config version | --config-file flag only supported from config version 2")
 			}
 			return nil
@@ -76,7 +78,7 @@ func NewInitCmd(ec *cli.ExecutionContext) *cobra.Command {
 	}
 
 	f := initCmd.Flags()
-	f.Var(cli.NewConfigVersionValue(cli.V2, &opts.Version), "version", "config version to be used")
+	f.Var(config2.NewConfigVersionValue(config2.V2, &opts.Version), "version", "config version to be used")
 	f.StringVar(&opts.InitDir, "directory", "", "name of directory where files will be created")
 	f.StringVar(&opts.Endpoint, "endpoint", "", "http(s) endpoint for Hasura GraphQL Engine")
 	f.StringVar(&opts.AdminSecret, "admin-secret", "", "admin secret for Hasura GraphQL Engine")
@@ -91,7 +93,7 @@ func NewInitCmd(ec *cli.ExecutionContext) *cobra.Command {
 type InitOptions struct {
 	EC *cli.ExecutionContext
 
-	Version     cli.ConfigVersion
+	Version     config2.Version
 	Endpoint    string
 	AdminSecret string
 	InitDir     string
@@ -128,11 +130,11 @@ func (o *InitOptions) Run() error {
 	}
 	if initPath == cwdir {
 		// check if pwd is filesystem root
-		if err := cli.CheckFilesystemBoundary(cwdir); err != nil {
+		if err := config2.CheckFilesystemBoundary(cwdir); err != nil {
 			return errors.Wrap(err, "can't initialise hasura project in filesystem root")
 		}
 		// check if the current directory is already a hasura project
-		if err := cli.CheckDirectoryForFiles(cwdir, cli.ConfigFile); err == nil {
+		if err := config2.CheckDirectoryForFiles(cwdir, config2.ConfigFile); err == nil {
 			return errors.Errorf("current working directory is already a hasura project directory")
 		}
 		o.EC.ExecutionDirectory = cwdir
@@ -196,17 +198,17 @@ func (o *InitOptions) createFiles() error {
 		return errors.Wrap(err, "error creating setup directories")
 	}
 	// set config object
-	var config *cli.Config
-	if o.Version == cli.V1 {
-		config = &cli.Config{
-			ServerConfig: cli.ServerConfig{
+	var config *config2.Config
+	if o.Version == config2.V1 {
+		config = &config2.Config{
+			ServerConfig: config2.ServerConfig{
 				Endpoint: "http://localhost:8080",
 			},
 		}
 	} else {
-		config = &cli.Config{
+		config = &config2.Config{
 			Version: o.Version,
-			ServerConfig: cli.ServerConfig{
+			ServerConfig: config2.ServerConfig{
 				Endpoint: "http://localhost:8080",
 			},
 			MetadataDirectory: "metadata",
@@ -245,7 +247,7 @@ func (o *InitOptions) createFiles() error {
 		return errors.Wrap(err, "cannot write migration directory")
 	}
 
-	if config.Version == cli.V2 {
+	if config.Version == config2.V2 {
 		// create metadata directory
 		o.EC.MetadataDir = filepath.Join(o.EC.ExecutionDirectory, "metadata")
 		err = os.MkdirAll(o.EC.MetadataDir, os.ModePerm)

@@ -3,6 +3,8 @@ package commands
 import (
 	"fmt"
 
+	"github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/hasura/graphql-engine/cli"
 	"github.com/hasura/graphql-engine/cli/migrate"
 	"github.com/hasura/graphql-engine/cli/util"
@@ -29,7 +31,7 @@ func NewMetadataCmd(ec *cli.ExecutionContext) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			if cmd.Root().PersistentFlags().Changed("config-file") && ec.Config.Version == cli.V1 {
+			if cmd.Root().PersistentFlags().Changed("config-file") && ec.Config.Version == config.V1 {
 				return fmt.Errorf("invalid config version | --config-file flag only supported from config version 2")
 			}
 			return nil

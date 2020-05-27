@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 
+	"github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/hasura/graphql-engine/cli"
 	"github.com/hasura/graphql-engine/cli/update"
 	"github.com/hasura/graphql-engine/cli/version"
@@ -33,7 +35,7 @@ var rootCmd = &cobra.Command{
 	Long:          hasuraASCIIText,
 	SilenceUsage:  true,
 	SilenceErrors: true,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		if cmd.Use != updateCLICmdUse {
 			if update.ShouldRunCheck(ec.LastUpdateCheckFile) && ec.GlobalConfig.ShowUpdateNotification && !ec.SkipUpdateCheck {
 				u := &updateOptions{
@@ -45,6 +47,12 @@ var rootCmd = &cobra.Command{
 				}
 			}
 		}
+		c, err := config.LoadConfig(ec.Viper, cmd)
+		if err != nil {
+			return err
+		}
+		ec.Config = c
+		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		o := helpOptions{

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/hasura/graphql-engine/cli/internal/config"
+
 	"github.com/pkg/errors"
 
 	"github.com/gin-contrib/cors"
@@ -95,7 +97,7 @@ func (r *APIServer) setFilePath(dir string) gin.HandlerFunc {
 	}
 }
 
-func (r *APIServer) setConfigVersion(configVersion cli.ConfigVersion) gin.HandlerFunc {
+func (r *APIServer) setConfigVersion(configVersion config.Version) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Set("version", int(configVersion))
 		c.Next()

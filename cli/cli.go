@@ -8,24 +8,16 @@
 package cli
 
 import (
-	"crypto/tls"
-	"crypto/x509"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"os"
-	"path"
 	"path/filepath"
-	"reflect"
-	"strconv"
-	"strings"
 	"time"
+
+	"github.com/hasura/graphql-engine/cli/internal/config"
 
 	"github.com/Masterminds/semver"
 	"github.com/briandowns/spinner"
 	"github.com/gofrs/uuid"
-	"github.com/hasura/graphql-engine/cli/metadata/actions/types"
 	"github.com/hasura/graphql-engine/cli/plugins"
 	"github.com/hasura/graphql-engine/cli/telemetry"
 	"github.com/hasura/graphql-engine/cli/util"
@@ -35,7 +27,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/subosito/gotenv"
 	"golang.org/x/crypto/ssh/terminal"
-	"gopkg.in/yaml.v2"
 )
 
 // Other constants used in the package
@@ -64,182 +55,6 @@ allow us to keep improving Hasura at warp speed. To opt-out or read more,
 visit https://hasura.io/docs/1.0/graphql/manual/guides/telemetry.html
 `
 )
-
-// ConfigVersion defines the version of the Config.
-type ConfigVersion int
-
-const (
-	// V1 represents config version 1
-	V1 ConfigVersion = iota + 1
-	// V2 represents config version 2
-	V2
-)
-
-// ServerAPIPaths has the custom paths defined for server api
-type ServerAPIPaths struct {
-	Query   string `yaml:"query,omitempty"`
-	GraphQL string `yaml:"graphql,omitempty"`
-	Config  string `yaml:"config,omitempty"`
-	PGDump  string `yaml:"pg_dump,omitempty"`
-	Version string `yaml:"version,omitempty"`
-}
-
-// GetQueryParams - encodes the values in url
-func (s ServerAPIPaths) GetQueryParams() url.Values {
-	vals := url.Values{}
-	t := reflect.TypeOf(s)
-	for i := 0; i < t.NumField(); i++ {
-		field := t.Field(i)
-		tag := field.Tag.Get("yaml")
-		splitTag := strings.Split(tag, ",")
-		if len(splitTag) == 0 {
-			continue
-		}
-		name := splitTag[0]
-		if name == "-" {
-			continue
-		}
-		v := reflect.ValueOf(s).Field(i)
-		vals.Add(name, v.String())
-	}
-	return vals
-}
-
-// ErrInvalidConfigVersion - if the config version is not valid
-var ErrInvalidConfigVersion error = fmt.Errorf("invalid config version")
-
-// NewConfigVersionValue returns ConfigVersion set with default value
-func NewConfigVersionValue(val ConfigVersion, p *ConfigVersion) *ConfigVersion {
-	*p = val
-	return p
-}
-
-// Set sets the value of the named command-line flag.
-func (c *ConfigVersion) Set(s string) error {
-	v, err := strconv.ParseInt(s, 0, 64)
-	*c = ConfigVersion(v)
-	if err != nil {
-		return err
-	}
-	if !c.IsValid() {
-		return ErrInvalidConfigVersion
-	}
-	return nil
-}
-
-// Type returns a string that uniquely represents this flag's type.
-func (c *ConfigVersion) Type() string {
-	return "int"
-}
-
-func (c *ConfigVersion) String() string {
-	return strconv.Itoa(int(*c))
-}
-
-// IsValid returns if its a valid config version
-func (c ConfigVersion) IsValid() bool {
-	return c == V1 || c == V2
-}
-
-// ServerConfig has the config values required to contact the server
-type ServerConfig struct {
-	// Endpoint for the GraphQL Engine
-	Endpoint string `yaml:"endpoint"`
-	// AccessKey (deprecated) (optional) Admin secret key required to query the endpoint
-	AccessKey string `yaml:"access_key,omitempty"`
-	// AdminSecret (optional) Admin secret required to query the endpoint
-	AdminSecret string `yaml:"admin_secret,omitempty"`
-	// APIPaths (optional) API paths for server
-	APIPaths *ServerAPIPaths `yaml:"api_paths,omitempty"`
-	// InsecureSkipTLSVerify - indicates if TLS verification is disabled or not.
-	InsecureSkipTLSVerify bool `yaml:"insecure_skip_tls_verify,omitempty"`
-	// CAPath - Path to a cert file for the certificate authority
-	CAPath string `yaml:"certificate_authority,omitempty"`
-
-	ParsedEndpoint *url.URL `yaml:"-"`
-
-	TLSConfig *tls.Config `yaml:"-"`
-
-	HTTPClient *http.Client `yaml:"-"`
-}
-
-// GetVersionEndpoint provides the url to contact the version API
-func (s *ServerConfig) GetVersionEndpoint() string {
-	nurl := *s.ParsedEndpoint
-	nurl.Path = path.Join(nurl.Path, s.APIPaths.Version)
-	return nurl.String()
-}
-
-// GetQueryEndpoint provides the url to contact the query API
-func (s *ServerConfig) GetQueryEndpoint() string {
-	nurl := *s.ParsedEndpoint
-	nurl.Path = path.Join(nurl.Path, s.APIPaths.Query)
-	return nurl.String()
-}
-
-// ParseEndpoint ensures the endpoint is valid.
-func (s *ServerConfig) ParseEndpoint() error {
-	nurl, err := url.ParseRequestURI(s.Endpoint)
-	if err != nil {
-		return err
-	}
-	s.ParsedEndpoint = nurl
-	return nil
-}
-
-// SetTLSConfig - sets the TLS config
-func (s *ServerConfig) SetTLSConfig() error {
-	if s.InsecureSkipTLSVerify {
-		s.TLSConfig = &tls.Config{InsecureSkipVerify: true}
-	}
-	if s.CAPath != "" {
-		// Get the SystemCertPool, continue with an empty pool on error
-		rootCAs, _ := x509.SystemCertPool()
-		if rootCAs == nil {
-			rootCAs = x509.NewCertPool()
-		}
-		// read cert
-		certPath, _ := filepath.Abs(s.CAPath)
-		cert, err := ioutil.ReadFile(certPath)
-		if err != nil {
-			return errors.Errorf("error reading CA %s", s.CAPath)
-		}
-		if ok := rootCAs.AppendCertsFromPEM(cert); !ok {
-			return errors.Errorf("Unable to append given CA cert.")
-		}
-		s.TLSConfig = &tls.Config{
-			RootCAs:            rootCAs,
-			InsecureSkipVerify: s.InsecureSkipTLSVerify,
-		}
-	}
-	return nil
-}
-
-// SetHTTPClient - sets the http client
-func (s *ServerConfig) SetHTTPClient() error {
-	s.HTTPClient = &http.Client{Transport: http.DefaultTransport}
-	if s.TLSConfig != nil {
-		tr := &http.Transport{TLSClientConfig: s.TLSConfig}
-		s.HTTPClient.Transport = tr
-	}
-	return nil
-}
-
-// Config represents configuration required for the CLI to function
-type Config struct {
-	// Version of the config.
-	Version ConfigVersion `yaml:"version,omitempty"`
-
-	// ServerConfig to be used by CLI to contact server.
-	ServerConfig `yaml:",inline"`
-
-	// MetadataDirectory defines the directory where the metadata files were stored.
-	MetadataDirectory string `yaml:"metadata_directory,omitempty"`
-	// MigrationsDirectory defines the directory where the migration files were stored.
-	MigrationsDirectory string `yaml:"migrations_directory,omitempty"`
-	// ActionConfig defines the config required to create or generate codegen for an action.
-	ActionConfig *types.ActionExecutionConfig `yaml:"actions,omitempty"`
-}
 
 // ExecutionContext contains various contextual information required by the cli
 // at various points of it's execution. Values are filled in by the
@@ -276,7 +91,7 @@ type ExecutionContext struct {
 
 	// Config is the configuration object storing the endpoint and admin secret
 	// information after reading from config file or env var.
-	Config *Config
+	Config *config.Config
 
 	// GlobalConfigDir is the ~/.hasura-graphql directory to store configuration
 	// globally.
@@ -380,7 +195,7 @@ func (ec *ExecutionContext) Prepare() error {
 
 	// initialize a blank server config
 	if ec.Config == nil {
-		ec.Config = &Config{}
+		ec.Config = &config.Config{}
 	}
 
 	// generate an execution id
@@ -477,12 +292,9 @@ func (ec *ExecutionContext) Validate() error {
 		return errors.Wrap(err, "loading .env file failed")
 	}
 
-	// read config and parse the values into Config
-	err = ec.readConfig()
-	if err != nil {
-		return errors.Wrap(err, "cannot read config")
+	if ec.Config == nil {
+		return errors.New("loading config failed")
 	}
-
 	ec.Logger.Debug("config file version: ", ec.Config.Version)
 
 	// validate execution directory if config is V1
@@ -500,7 +312,7 @@ func (ec *ExecutionContext) Validate() error {
 		}
 	}
 
-	if ec.Config.Version == V2 && ec.Config.MetadataDirectory != "" {
+	if ec.Config.Version == config.V2 && ec.Config.MetadataDirectory != "" {
 		// set name of metadata directory
 		ec.MetadataDir = filepath.Join(ec.ExecutionDirectory, ec.Config.MetadataDirectory)
 		if _, err := os.Stat(ec.MetadataDir); os.IsNotExist(err) {
@@ -557,100 +369,8 @@ func (ec *ExecutionContext) checkServerVersion() error {
 }
 
 // WriteConfig writes the configuration from ec.Config or input config
-func (ec *ExecutionContext) WriteConfig(config *Config) error {
-	var cfg *Config
-	if config != nil {
-		cfg = config
-	} else {
-		cfg = ec.Config
-	}
-	y, err := yaml.Marshal(cfg)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile(ec.ConfigFile, y, 0644)
-}
-
-// readConfig reads the configuration from config file, flags and env vars,
-// through viper.
-func (ec *ExecutionContext) readConfig() error {
-	// need to get existing viper because https://github.com/spf13/viper/issues/233
-	v := ec.Viper
-	v.SetEnvPrefix(util.ViperEnvPrefix)
-	v.SetEnvKeyReplacer(util.ViperEnvReplacer)
-	v.AutomaticEnv()
-	v.SetDefault("version", "2")
-	v.SetDefault("endpoint", "http://localhost:8080")
-	v.SetDefault("admin_secret", "")
-	v.SetDefault("access_key", "")
-	v.SetDefault("api_paths.query", "v1/query")
-	v.SetDefault("api_paths.graphql", "v1/graphql")
-	v.SetDefault("api_paths.config", "v1alpha1/config")
-	v.SetDefault("api_paths.pg_dump", "v1alpha1/pg_dump")
-	v.SetDefault("api_paths.version", "v1/version")
-	v.SetDefault("metadata_directory", "metadata")
-	v.SetDefault("migrations_directory", "migrations")
-	v.SetDefault("actions.kind", "synchronous")
-	v.SetDefault("actions.handler_webhook_baseurl", "http://localhost:3000")
-	v.SetDefault("actions.codegen.framework", "")
-	v.SetDefault("actions.codegen.output_dir", "")
-	v.SetDefault("actions.codegen.uri", "")
-	if ec.ConfigFile != "" {
-		configBase := filepath.Base(ec.ConfigFile)
-		configName := strings.TrimSuffix(configBase, filepath.Ext(configBase))
-		configPath := filepath.Dir(ec.ConfigFile)
-		v.SetDefault("version", "1")
-		v.SetDefault("metadata_directory", "")
-		v.SetConfigName(configName)
-		v.AddConfigPath(configPath)
-		err := v.ReadInConfig()
-		if err != nil {
-			return errors.Wrap(err, "cannot read config from config file")
-		}
-	}
-	adminSecret := v.GetString("admin_secret")
-	if adminSecret == "" {
-		adminSecret = v.GetString("access_key")
-	}
-	ec.Config = &Config{
-		Version: ConfigVersion(v.GetInt("version")),
-		ServerConfig: ServerConfig{
-			Endpoint:    v.GetString("endpoint"),
-			AdminSecret: adminSecret,
-			APIPaths: &ServerAPIPaths{
-				Query:   v.GetString("api_paths.query"),
-				GraphQL: v.GetString("api_paths.graphql"),
-				Config:  v.GetString("api_paths.config"),
-				PGDump:  v.GetString("api_paths.pg_dump"),
-				Version: v.GetString("api_paths.version"),
-			},
-			InsecureSkipTLSVerify: v.GetBool("insecure_skip_tls_verify"),
-			CAPath:                v.GetString("certificate_authority"),
-		},
-		MetadataDirectory:   v.GetString("metadata_directory"),
-		MigrationsDirectory: v.GetString("migrations_directory"),
-		ActionConfig: &types.ActionExecutionConfig{
-			Kind:                  v.GetString("actions.kind"),
-			HandlerWebhookBaseURL: v.GetString("actions.handler_webhook_baseurl"),
-			Codegen: &types.CodegenExecutionConfig{
-				Framework: v.GetString("actions.codegen.framework"),
-				OutputDir: v.GetString("actions.codegen.output_dir"),
-				URI:       v.GetString("actions.codegen.uri"),
-			},
-		},
-	}
-	if !ec.Config.Version.IsValid() {
-		return ErrInvalidConfigVersion
-	}
-	err := ec.Config.ServerConfig.ParseEndpoint()
-	if err != nil {
-		return errors.Wrap(err, "unable to parse server endpoint")
-	}
-	err = ec.Config.ServerConfig.SetTLSConfig()
-	if err != nil {
-		return errors.Wrap(err, "setting up TLS config failed")
-	}
-	return ec.Config.ServerConfig.SetHTTPClient()
+func (ec *ExecutionContext) WriteConfig(c *config.Config) error {
+	return ec.Config.WriteConfig(c, ec.ConfigFile)
 }
 
 // setupSpinner creates a default spinner if the context does not already have
