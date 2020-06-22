@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spf13/afero"
+
 	"github.com/hasura/graphql-engine/cli/version"
 
 	"github.com/hasura/graphql-engine/cli"
@@ -18,6 +20,7 @@ const (
 )
 
 type CronTriggers struct {
+	FS          afero.Fs
 	MetadataDir string
 
 	logger             *logrus.Logger
@@ -50,12 +53,15 @@ func (c *CronTriggers) CreateFiles() error {
 }
 
 func (c *CronTriggers) Build(metadata *yaml.MapSlice) error {
+	if c.FS == nil {
+		c.FS = afero.NewOsFs()
+	}
 	logger := c.logger.WithField("metadata_plugin", "cron_triggers")
 	if !c.serverFeatureFlags.HasCronTriggers {
 		logger.Debugf("Skipping building %s", fileName)
 		return nil
 	}
-	data, err := ioutil.ReadFile(filepath.Join(c.MetadataDir, fileName))
+	data, err := afero.ReadFile(c.FS, filepath.Join(c.MetadataDir, fileName))
 	if err != nil {
 		if os.IsNotExist(err) {
 			logger.Debugf("file %s not found, assuming empty file", fileName)
@@ -69,6 +75,7 @@ func (c *CronTriggers) Build(metadata *yaml.MapSlice) error {
 		Key:   metadataKey,
 		Value: []yaml.MapSlice{},
 	}
+
 	err = yaml.Unmarshal(data, &item.Value)
 	if err != nil {
 		return err
