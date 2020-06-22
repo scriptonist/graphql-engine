@@ -2,6 +2,7 @@ package crontriggers
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/hasura/graphql-engine/cli/version"
@@ -50,12 +51,17 @@ func (c *CronTriggers) CreateFiles() error {
 
 func (c *CronTriggers) Build(metadata *yaml.MapSlice) error {
 	if !c.serverFeatureFlags.HasCronTriggers {
-		c.logger.WithField("metadata_plugin", "cron_triggers").Warnf("Skipping building %s", fileName)
+		c.logger.WithField("metadata_plugin", "cron_triggers").Debugf("Skipping building %s", fileName)
 		return nil
 	}
 	data, err := ioutil.ReadFile(filepath.Join(c.MetadataDir, fileName))
 	if err != nil {
-		return err
+		if os.IsNotExist(err) {
+			c.logger.Debugf("file %s not found, assuming empty file", fileName)
+			data = []byte(`[]`)
+		} else {
+			return err
+		}
 	}
 
 	item := yaml.MapItem{
@@ -72,7 +78,7 @@ func (c *CronTriggers) Build(metadata *yaml.MapSlice) error {
 
 func (c *CronTriggers) Export(metadata yaml.MapSlice) (map[string][]byte, error) {
 	if !c.serverFeatureFlags.HasCronTriggers {
-		c.logger.Debugf("Skipping creating %s", fileName)
+		c.logger.WithField("metadata_plugin", "cron_triggers").Debugf("Skipping creating %s", fileName)
 		return make(map[string][]byte), nil
 	}
 	var cronTriggers interface{}
