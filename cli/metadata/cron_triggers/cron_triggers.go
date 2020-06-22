@@ -50,14 +50,15 @@ func (c *CronTriggers) CreateFiles() error {
 }
 
 func (c *CronTriggers) Build(metadata *yaml.MapSlice) error {
+	logger := c.logger.WithField("metadata_plugin", "cron_triggers")
 	if !c.serverFeatureFlags.HasCronTriggers {
-		c.logger.WithField("metadata_plugin", "cron_triggers").Debugf("Skipping building %s", fileName)
+		logger.Debugf("Skipping building %s", fileName)
 		return nil
 	}
 	data, err := ioutil.ReadFile(filepath.Join(c.MetadataDir, fileName))
 	if err != nil {
 		if os.IsNotExist(err) {
-			c.logger.Debugf("file %s not found, assuming empty file", fileName)
+			logger.Debugf("file %s not found, assuming empty file", fileName)
 			data = []byte(`[]`)
 		} else {
 			return err
