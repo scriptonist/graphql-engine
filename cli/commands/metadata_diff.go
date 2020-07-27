@@ -2,6 +2,7 @@ package commands
 
 import (
 	"fmt"
+	"github.com/gonvenience/wrap"
 	"io"
 	"io/ioutil"
 	"os"
@@ -10,12 +11,14 @@ import (
 	"github.com/hasura/graphql-engine/cli/migrate"
 
 	"github.com/aryann/difflib"
+	"github.com/gonvenience/ytbx"
 	"github.com/hasura/graphql-engine/cli"
 	"github.com/hasura/graphql-engine/cli/metadata"
+	"github.com/homeport/dyff/pkg/dyff"
 	"github.com/mgutz/ansi"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 type MetadataDiffOptions struct {
@@ -139,7 +142,38 @@ func (o *MetadataDiffOptions) runv2(args []string) error {
 		return errors.Wrap(err, "cannot unmarshal local metadata")
 	}
 
-	printDiff(string(oldYaml), string(newYaml), o.Output)
+	f1, err := ioutil.TempFile("", "hasura-cli-md-diff*")
+	if err != nil {
+		return err
+	}
+	f1.Write(oldYaml)
+	f1.Close()
+
+	f2, err := ioutil.TempFile("", "hasura-cli-md-diff*")
+	if err != nil {
+		return err
+	}
+	f2.Write(newYaml)
+	f2.Close()
+
+	from, to, err := ytbx.LoadFiles(f1.Name(), f2.Name())
+	if err != nil {
+		return wrap.Errorf(err, "failed to load input files")
+	}
+	report, err := dyff.CompareInputFiles(from, to)
+	if err != nil {
+		return wrap.Errorf(err, "failed to compare input files")
+	}
+	reportWriter := &dyff.HumanReport{
+		Report:            report,
+		NoTableStyle:      true,
+		ShowBanner:        false,
+	}
+	err = reportWriter.WriteReport(os.Stdout)
+	if err != nil {
+		return wrap.Errorf(err, "failed to print report")
+	}
+	// printDiff(string(oldYaml), string(newYaml), o.Output)
 	return nil
 }
 
@@ -198,7 +232,37 @@ func (o *MetadataDiffOptions) runv1(args []string) error {
 		return errors.Wrap(err, "cannot read file")
 	}
 
-	printDiff(string(oldYaml), string(newYaml), o.Output)
+	f1, err := ioutil.TempFile("", "hasura-cli-md-diff*")
+	if err != nil {
+		return err
+	}
+	f1.Write(oldYaml)
+	f1.Close()
+
+	f2, err := ioutil.TempFile("", "hasura-cli-md-diff*")
+	if err != nil {
+		return err
+	}
+	f2.Write(newYaml)
+	f2.Close()
+
+	from, to, err := ytbx.LoadFiles(f1.Name(), f2.Name())
+	if err != nil {
+		return wrap.Errorf(err, "failed to load input files")
+	}
+	report, err := dyff.CompareInputFiles(from, to)
+	if err != nil {
+		return wrap.Errorf(err, "failed to compare input files")
+	}
+	reportWriter := &dyff.HumanReport{
+		Report:            report,
+		NoTableStyle:      true,
+		ShowBanner:        false,
+	}
+	err = reportWriter.WriteReport(os.Stdout)
+	if err != nil {
+		return wrap.Errorf(err, "failed to print report")
+	}
 	return nil
 }
 
