@@ -45,7 +45,9 @@ func TestCatalogState_GetCatalogState(t *testing.T) {
 `)
 
 						w.Header().Set("Content-Type", "application/json")
-						w.Write(resp)
+						if _, err := w.Write(resp); err != nil {
+							t.Fatal(err)
+						}
 					}))
 					hasuraClient, err := client.NewClient(nil, fmt.Sprintf("%s/", ts.URL))
 					if err != nil {
@@ -79,7 +81,9 @@ func TestCatalogState_GetCatalogState(t *testing.T) {
 
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						w.Write(resp)
+						if _, err := w.Write(resp); err != nil {
+							t.Fatal(err)
+						}
 					}))
 					hasuraClient, err := client.NewClient(nil, fmt.Sprintf("%s/", ts.URL))
 					if err != nil {
@@ -137,9 +141,10 @@ func TestCatalogState_SetCatalogState(t *testing.T) {
     "message": "success"
 }
 `)
-
 						w.Header().Set("Content-Type", "application/json")
-						w.Write(resp)
+						if _, err := w.Write(resp); err != nil {
+							t.Fatal(err)
+						}
 					}))
 					hasuraClient, err := client.NewClient(nil, fmt.Sprintf("%s/", ts.URL))
 					if err != nil {

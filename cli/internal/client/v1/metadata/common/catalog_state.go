@@ -1,12 +1,12 @@
 package common
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
 
 	"github.com/pkg/errors"
-
-	"github.com/mitchellh/mapstructure"
 
 	"github.com/hasura/graphql-engine/cli/internal/client"
 	"github.com/hasura/graphql-engine/cli/internal/client/v1/metadata"
@@ -40,11 +40,11 @@ func (c *CatalogState) GetCatalogState() (*metadata.GetCatalogStateResponseBody,
 		return nil, err
 	}
 
-	var responseBody = new(map[string]interface{})
+	var responseBody = new(bytes.Buffer)
 	resp, err := c.client.Do(context.Background(), req, responseBody)
 	if resp.StatusCode == http.StatusBadRequest {
 		var catalogStateErr = new(metadata.CatalogStateErr)
-		if decodeErr := mapstructure.Decode(responseBody, catalogStateErr); decodeErr != nil {
+		if decodeErr := json.Unmarshal(responseBody.Bytes(), catalogStateErr); decodeErr != nil {
 			return nil, errors.Wrap(err, errors.Wrap(decodeErr, "decoding error body failed").Error())
 		}
 		if catalogStateErr != nil {
@@ -56,7 +56,7 @@ func (c *CatalogState) GetCatalogState() (*metadata.GetCatalogStateResponseBody,
 	}
 
 	var catalogStateOutput = new(metadata.GetCatalogStateResponseBody)
-	if err := mapstructure.Decode(responseBody, catalogStateOutput); err != nil {
+	if err := json.Unmarshal(responseBody.Bytes(), catalogStateOutput); err != nil {
 		return nil, err
 	}
 
@@ -70,11 +70,11 @@ func (c *CatalogState) SetCatalogState(args *metadata.SetCatalogStateRequestArgs
 		return nil, err
 	}
 
-	var responseBody = new(map[string]interface{})
+	var responseBody = new(bytes.Buffer)
 	resp, err := c.client.Do(context.Background(), req, responseBody)
 	if resp.StatusCode == http.StatusBadRequest {
 		var catalogStateErr = new(metadata.CatalogStateErr)
-		if decodeErr := mapstructure.Decode(responseBody, catalogStateErr); decodeErr != nil {
+		if decodeErr := json.Unmarshal(responseBody.Bytes(), catalogStateErr); decodeErr != nil {
 			return nil, errors.Wrap(err, errors.Wrap(decodeErr, "decoding error body failed").Error())
 		}
 		if catalogStateErr != nil {
@@ -86,7 +86,7 @@ func (c *CatalogState) SetCatalogState(args *metadata.SetCatalogStateRequestArgs
 	}
 
 	var catalogStateOutput = new(metadata.SetCatalogStateResponseBody)
-	if err := mapstructure.Decode(responseBody, catalogStateOutput); err != nil {
+	if err := json.Unmarshal(responseBody.Bytes(), catalogStateOutput); err != nil {
 		return nil, err
 	}
 

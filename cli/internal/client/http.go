@@ -81,14 +81,11 @@ func (c *Client) NewRequest(method, urlStr string, body interface{}) (*http.Requ
 }
 
 // Do sends an API request and returns the API response. The API response is
-// JSON decoded and stored in the value pointed to by v, or returned as an
-// error if an API error has occurred. If v implements the io.Writer
-// interface, the raw response body will be written to v, without attempting to
-// first decode it.
+// JSON decoded and stored in the value pointed to by v
 //
 // The provided ctx must be non-nil, if it is nil an error is returned. If it is canceled or times out,
 // ctx.Err() will be returned.
-func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*http.Response, error) {
+func (c *Client) Do(ctx context.Context, req *http.Request, v *bytes.Buffer) (*http.Response, error) {
 	if ctx == nil {
 		return nil, errors.New("context must be non-nil")
 	}
@@ -122,26 +119,10 @@ func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*htt
 	}()
 
 	if v != nil {
-		if w, ok := v.(io.Writer); ok {
-			io.Copy(w, resp.Body)
-		} else {
-			err = DecodeJSON(resp.Body, v)
-		}
+		io.Copy(v, resp.Body)
 	}
 
 	return resp, err
-}
-
-func DecodeJSON(from io.Reader, to interface{}) error {
-	err := json.NewDecoder(from).Decode(to)
-	if err == io.EOF {
-		err = nil // ignore EOF errors caused by empty response body
-	}
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func withContext(ctx context.Context, req *http.Request) *http.Request {
