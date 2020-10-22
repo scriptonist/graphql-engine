@@ -18,6 +18,8 @@ func TestGetCatalogStateQuery_Send(t *testing.T) {
 	}
 	m := http.NewServeMux()
 	ts := httptest.NewServer(m)
+	defer ts.Close()
+
 	type args struct {
 		client *client.Client
 	}
@@ -30,7 +32,7 @@ func TestGetCatalogStateQuery_Send(t *testing.T) {
 		{
 			"can send catalog state request",
 			func() fields {
-				q := NewGetCatalogStateQuery("/success")
+				q := NewGetCatalogStateQuery("success")
 				return fields{
 					GetCatalogStateRequest:      q.GetCatalogStateRequest,
 					GetCatalogStateHTTP:         q.GetCatalogStateHTTP,

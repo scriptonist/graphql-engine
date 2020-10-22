@@ -5,6 +5,9 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httputil"
+
+	"github.com/pkg/errors"
 
 	"github.com/hasura/graphql-engine/cli/internal/client"
 )
@@ -88,21 +91,24 @@ func SendMetadataQuery(client *client.Client, queryType *QueryType) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(req)
 	var responseBody = new(bytes.Buffer)
 	response, err := client.Do(context.Background(), req, responseBody)
 	if err != nil {
 		return err
 	}
-	fmt.Println(responseBody.String())
 	if response.StatusCode == http.StatusBadRequest {
-		if err := queryType.ResponseError.UnmarshalResponseErrorJSON(responseBody.Bytes()); err != nil {
-			return err
+		if decodeErr := queryType.ResponseError.UnmarshalResponseErrorJSON(responseBody.Bytes()); decodeErr != nil {
+			return decodeErr
 		}
-		return nil
-	} else if response.StatusCode != http.StatusOK {
 		return err
+	} else if response.StatusCode != http.StatusOK {
+		if b, err := httputil.DumpResponse(response, false); err == nil {
+			return fmt.Errorf("%s\n%s", string(b), responseBody.String())
+		} else {
+			return errors.Wrap(err, "client failed to decode response")
+		}
 	}
-
 	if err := queryType.ResponseBody.UnmarshalResponseBodyJSON(responseBody.Bytes()); err != nil {
 		return err
 	}

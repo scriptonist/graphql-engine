@@ -25,6 +25,21 @@ func (b BulkQuery) Send(client *client.Client) error {
 	return SendMetadataQuery(client, queryType)
 }
 
+func NewBulkQuery(request BulkQueryRequest, apiPath string) *BulkQuery {
+	return &BulkQuery{
+		BulkQueryRequest:  request,
+		BulkQueryHTTP:     NewBulkQueryHTTP(apiPath),
+		BulkQueryResponse: new(BulkQueryResponse),
+		ErrBulkQuery:      new(ErrBulkQuery),
+	}
+}
+
+func NewBulkQueryHTTP(path string) BulkQueryHTTP {
+	return BulkQueryHTTP{
+		path: path,
+	}
+}
+
 type ErrBulkQuery []ResponseError
 
 func (bulkQueryErrors *ErrBulkQuery) UnmarshalResponseErrorJSON(b []byte) error {
@@ -40,7 +55,7 @@ func (bulkQueryErrors ErrBulkQuery) Error() string {
 }
 
 type BulkQueryRequest struct {
-	args []RequestBody
+	args []QueryType
 }
 
 func (b BulkQueryRequest) Type() string {
@@ -58,6 +73,7 @@ func (b *BulkQueryResponse) UnmarshalResponseBodyJSON(data []byte) error {
 }
 
 type BulkQueryHTTP struct {
+	path string
 }
 
 func (b BulkQueryHTTP) Method() string {
@@ -65,5 +81,8 @@ func (b BulkQueryHTTP) Method() string {
 }
 
 func (b BulkQueryHTTP) Path() string {
-	return defaultMetadataAPIPath
+	if b.path == "" {
+		return defaultMetadataAPIPath
+	}
+	return b.path
 }
