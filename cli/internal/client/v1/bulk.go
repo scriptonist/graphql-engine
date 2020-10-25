@@ -2,6 +2,8 @@ package v1
 
 import "net/http"
 
+const DefaultBulkMetadataAPIPath = "v1/metadata"
+
 type bulk struct {
 	path   string
 	method string
@@ -9,7 +11,7 @@ type bulk struct {
 
 func NewBulk() *bulk {
 	return &bulk{
-		path:   DefaultMetadataAPIPath,
+		path:   DefaultBulkMetadataAPIPath,
 		method: http.MethodPost,
 	}
 }

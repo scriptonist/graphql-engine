@@ -1,7 +1,9 @@
 package common
 
+const DefaultCommonMetadataAPIPath = "v1/metadata"
+
 type Common struct {
-	*catalogState
+	CatalogState *catalogState
 }
 
 func New() *Common {

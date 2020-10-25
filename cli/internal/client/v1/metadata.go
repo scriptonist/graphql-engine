@@ -5,11 +5,10 @@ import (
 	"github.com/hasura/graphql-engine/cli/internal/client/v1/datasource"
 )
 
-const DefaultMetadataAPIPath = "v1/metadata"
-
 type Metadata struct {
-	*common.Common
-	*bulk
+	// Datasource agnostic API's
+	Common        *common.Common
+	Bulk          *bulk
 	DatasourceAPI func(backend datasource.Backend) datasource.Datasource
 }
 
