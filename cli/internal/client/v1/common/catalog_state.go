@@ -70,7 +70,6 @@ func (gcs *getCatalogState) GetCatalogState(client *client.Client, requestBody g
 	if err != nil {
 		return nil, errors.Wrap(err, "making api request")
 	}
-	fmt.Println(respBody.String())
 	if resp.StatusCode == http.StatusBadRequest {
 		apiResponseErr := new(errGetCatalogState)
 		err := json.Unmarshal(respBody.Bytes(), apiResponseErr)

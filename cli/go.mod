@@ -24,7 +24,6 @@ require (
 	github.com/jinzhu/configor v1.1.1 // indirect
 	github.com/jinzhu/gorm v1.9.11 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
-	github.com/magiconair/properties v1.8.1
 	github.com/manifoldco/promptui v0.6.0
 	github.com/markbates/pkger v0.15.1
 	github.com/mattn/go-colorable v0.1.4
