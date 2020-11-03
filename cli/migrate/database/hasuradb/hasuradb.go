@@ -278,6 +278,7 @@ func (h *HasuraDB) ResetQuery() {
 	h.migrationQuery.ResetArgs()
 }
 
+// TODO: change this implementation
 func (h *HasuraDB) InsertVersion(version int64) error {
 	query := HasuraQuery{
 		Type: "run_sql",
@@ -289,6 +290,7 @@ func (h *HasuraDB) InsertVersion(version int64) error {
 	return nil
 }
 
+// TODO: change this implementation
 func (h *HasuraDB) RemoveVersion(version int64) error {
 	query := HasuraQuery{
 		Type: "run_sql",
