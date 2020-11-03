@@ -611,7 +611,7 @@ func (ec *ExecutionContext) Validate() error {
 	// set default API Paths w.r.t to server feature flags
 	ec.Config.ServerConfig.APIPaths.SetDefaults(ec.Version.ServerFeatureFlags)
 
-	state := util.GetServerState(ec.Config.ServerConfig.GetQueryEndpoint(), ec.Config.ServerConfig.AdminSecret, ec.Config.ServerConfig.TLSConfig, ec.Version.ServerSemver, ec.Logger)
+	state := util.GetServerState(ec.Config.ServerConfig.AdminSecret, ec.Config.ServerConfig.TLSConfig, ec.Version.ServerSemver, ec.Logger, ec.Version.ServerFeatureFlags)
 	ec.ServerUUID = state.UUID
 	ec.Telemetry.ServerUUID = ec.ServerUUID
 	ec.Logger.Debugf("server: uuid: %s", ec.ServerUUID)
