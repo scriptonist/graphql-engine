@@ -28,7 +28,7 @@ func (h *HasuraDB) ExportMetadata() (map[string][]byte, error) {
 		Type: "export_metadata",
 		Args: HasuraArgs{},
 	}
-
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		h.logger.Debug(err)
@@ -65,7 +65,7 @@ func (h *HasuraDB) ResetMetadata() error {
 		Type: "clear_metadata",
 		Args: HasuraArgs{},
 	}
-
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		h.logger.Debug(err)
@@ -85,7 +85,7 @@ func (h *HasuraDB) ReloadMetadata() error {
 		Type: "reload_metadata",
 		Args: HasuraArgs{},
 	}
-
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		h.logger.Debug(err)
@@ -104,7 +104,7 @@ func (h *HasuraDB) GetInconsistentMetadata() (bool, []database.InconsistentMetad
 		Type: "get_inconsistent_metadata",
 		Args: HasuraArgs{},
 	}
-
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		h.logger.Debug(err)
@@ -133,7 +133,7 @@ func (h *HasuraDB) DropInconsistentMetadata() error {
 		Type: "drop_inconsistent_metadata",
 		Args: HasuraArgs{},
 	}
-
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		h.logger.Debug(err)
@@ -193,6 +193,7 @@ func (h *HasuraDB) ApplyMetadata() error {
 			},
 		},
 	}
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		h.logger.Debug(err)
@@ -235,7 +236,7 @@ func (h *HasuraDB) Query(data interface{}) error {
 		Type: "bulk",
 		Args: data,
 	}
-
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		h.logger.Debug(err)

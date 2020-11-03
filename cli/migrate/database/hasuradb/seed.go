@@ -5,6 +5,7 @@ import (
 )
 
 func (h *HasuraDB) ApplySeed(m interface{}) error {
+	// TODO
 	resp, body, err := h.sendv1Query(m)
 	if err != nil {
 		return err

@@ -18,7 +18,7 @@ func (h *HasuraDB) ensureSettingsTable() error {
 			SQL: `SELECT COUNT(1) FROM information_schema.tables WHERE table_name = '` + h.config.SettingsTable + `' AND table_schema = '` + DefaultSchema + `' LIMIT 1`,
 		},
 	}
-
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		h.logger.Debug(err)
@@ -53,7 +53,7 @@ func (h *HasuraDB) ensureSettingsTable() error {
 			SQL: `CREATE TABLE ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.SettingsTable) + ` (setting text not null primary key, value text not null)`,
 		},
 	}
-
+	// TODO
 	resp, body, err = h.sendv1Query(query)
 	if err != nil {
 		return err
@@ -94,6 +94,7 @@ func (h *HasuraDB) setDefaultSettings() error {
 		return nil
 	}
 
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		return err
@@ -115,6 +116,7 @@ func (h *HasuraDB) GetSetting(name string) (value string, err error) {
 	}
 
 	// Send Query
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		return value, err
@@ -157,6 +159,7 @@ func (h *HasuraDB) UpdateSetting(name string, value string) error {
 	}
 
 	// Send Query
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		return err

@@ -187,7 +187,7 @@ func (h *HasuraDB) UnLock() error {
 	if len(h.migrationQuery.Args) == 0 {
 		return nil
 	}
-
+	// TODO
 	resp, body, err := h.sendv1Query(h.migrationQuery)
 	if err != nil {
 		return err
@@ -309,6 +309,7 @@ func (h *HasuraDB) getVersions() (err error) {
 		},
 	}
 
+	// TODO
 	// Send Query
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
@@ -372,6 +373,7 @@ func (h *HasuraDB) ensureVersionTable() error {
 		},
 	}
 
+	// TODO
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		h.logger.Debug(err)
@@ -405,7 +407,7 @@ func (h *HasuraDB) ensureVersionTable() error {
 			SQL: `CREATE TABLE ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.MigrationsTable) + ` (version bigint not null primary key, dirty boolean not null)`,
 		},
 	}
-
+	// TODO
 	resp, body, err = h.sendv1Query(query)
 	if err != nil {
 		return err
