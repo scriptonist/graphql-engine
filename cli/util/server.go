@@ -2,6 +2,9 @@ package util
 
 import (
 	"crypto/tls"
+	"encoding/json"
+	"errors"
+	"fmt"
 
 	"github.com/Masterminds/semver"
 	"github.com/hasura/graphql-engine/cli/version"
@@ -32,11 +35,13 @@ type ServerState struct {
 	CLIState map[string]interface{}
 }
 
+// hdbVersion will be used for the version(s) that do not support data sources
 type hdbVersion struct {
 	UUID     string                 `json:"hasura_uuid"`
 	CLIState map[string]interface{} `json:"cli_state"`
 }
 
+// hdbVersionV2 will be used for the version(s) that support data sources
 type hdbVersionV2 struct {
 	ID       string   `json:"id"`
 	CLIState CLIState `json:"cli_state"`
@@ -96,7 +101,9 @@ func GetServerState(adminSecret string, config *tls.Config, serverVersion *semve
 		}
 
 		state.UUID = r[0].UUID
-		state.CLIState = r[0].CLIState
+		state.CLIState = map[string]interface{}{
+			"v1": r[0].CLIState,
+		}
 		return state
 	}
 
@@ -108,26 +115,64 @@ func GetServerState(adminSecret string, config *tls.Config, serverVersion *semve
 		return state
 	}
 
+	state.ID = res.ID
 	state.UUID = res.ID
 	// FIXME: definitely sure that this is not ideal, but this is one way to get around the current constraints
 	state.CLIState = map[string]interface{}{
-		"state": res.CLIState,
+		"v2": res.CLIState,
 	}
 	return state
 }
 
 // UpdateServerState will update the server state with a new state object
-func UpdateServerState(serverFeatureFlags *version.ServerFeatureFlags, updatedState CLIState) error {
-	// TODO: complete the implementation
-	// 1. check if all the required fields are present (everything that is part of the CLIState)
-	// 2. make the request body
-	/*{
-			type: set_catalog_state
-			args: {
-			  "type": "console",
-	    	  "state": {"key": "value"}
+func UpdateServerState(serverFeatureFlags *version.ServerFeatureFlags, adminSecret string, config *tls.Config, log *logrus.Logger, updatedState CLIState) (*ServerState, error) {
+	latestState := &ServerState{
+		ID: defaultUUID,
+	}
+
+	if !serverFeatureFlags.HasDatasources {
+		// TODO: improve the error message
+		return latestState, errors.New("the current data source does not support the usage of the update state API")
+	}
+	// data sources are supported
+
+	updatedStateJSON, err := json.Marshal(updatedState)
+
+	if err != nil {
+		return latestState, errors.New("Failed to update state on the DB")
+	}
+
+	payload := fmt.Sprintf(`{
+		type: "set_catalog_state",
+		args: {
+			"type": "cli",
+			"state": %s,
 			}
-		  }
-	*/
-	return nil
+		}`, string(updatedStateJSON))
+
+	endpoint := "v1/metadata"
+	req := gorequest.New()
+	if config != nil {
+		req.TLSClientConfig(config)
+	}
+	req.Post(endpoint).Send(payload)
+	req.Set("X-Hasura-Admin-Secret", adminSecret)
+
+	var res hdbVersionV2
+
+	_, _, errs := req.EndStruct(&res)
+
+	if len(errs) != 0 {
+		log.Debugf("failed to update the server state: errors: %v", errs)
+		// FIXME: errs[0] is not a good solution, it might just one of many.
+		return latestState, errs[0]
+	}
+
+	latestState.UUID = res.ID
+	latestState.ID = res.ID
+	latestState.CLIState = map[string]interface{}{
+		"v2": res.CLIState,
+	}
+
+	return latestState, nil
 }
