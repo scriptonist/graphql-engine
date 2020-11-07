@@ -5,11 +5,12 @@ import           Hasura.Prelude
 import qualified Data.Aeson                       as J
 import qualified Data.HashMap.Strict.InsOrd       as OMap
 
-import qualified Hasura.Backends.Postgres.SQL.DML as S
-
 import           Hasura.EncJSON
 import           Hasura.RQL.IR.Select
+import           Hasura.RQL.Types.Common
 import           Hasura.SQL.Backend
+
+import qualified Hasura.Backends.Postgres.SQL.DML as S
 
 
 data MutFldG (b :: Backend) v
@@ -17,7 +18,7 @@ data MutFldG (b :: Backend) v
   | MExp !Text
   | MRet !(AnnFieldsG b v)
 
-type MutFld b = MutFldG b S.SQLExp
+type MutFld b = MutFldG b (SQLExp b)
 
 type MutFldsG b v = Fields (MutFldG b v)
 
@@ -25,9 +26,9 @@ data MutationOutputG (b :: Backend) v
   = MOutMultirowFields !(MutFldsG b v)
   | MOutSinglerowObject !(AnnFieldsG b v)
 
-type MutationOutput b = MutationOutputG b S.SQLExp
+type MutationOutput b = MutationOutputG b (SQLExp b)
 
-type MutFlds b = MutFldsG b S.SQLExp
+type MutFlds b = MutFldsG b (SQLExp b)
 
 buildEmptyMutResp :: MutationOutput backend -> EncJSON
 buildEmptyMutResp = \case
@@ -79,3 +80,24 @@ hasNestedFld = \case
       AFObjectRelation _ -> True
       AFArrayRelation _  -> True
       _                  -> False
+
+-- | The postgres common table expression (CTE) for mutation queries.
+-- This CTE expression is used to generate mutation field output expression,
+-- see Note [Mutation output expression].
+data MutationCTE
+  = MCCheckConstraint !S.CTE -- ^ A Mutation with check constraint validation (Insert or Update)
+  | MCSelectValues !S.Select -- ^ A Select statement which emits mutated table rows
+  | MCDelete !S.SQLDelete -- ^ A Delete statement
+  deriving (Show, Eq)
+
+getMutationCTE :: MutationCTE -> S.CTE
+getMutationCTE = \case
+  MCCheckConstraint cte -> cte
+  MCSelectValues select -> S.CTESelect select
+  MCDelete delete       -> S.CTEDelete delete
+
+checkPermissionRequired :: MutationCTE -> Bool
+checkPermissionRequired = \case
+  MCCheckConstraint _ -> True
+  MCSelectValues _    -> False
+  MCDelete _          -> False
