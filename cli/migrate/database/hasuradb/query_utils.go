@@ -9,6 +9,9 @@ type V2Query string
 // V1Metadata is for all queries that can run on v1/metadata
 type V1Metadata string
 
+// DataSourcesEndpoints has all the new endpoints related to the data sources changes
+type DataSourcesEndpoints string
+
 // All DatabaseDriver possibilities
 const (
 	Postgres DatabaseDriver = "postgres"
@@ -93,6 +96,12 @@ const (
 	DumpInternalState                      = "dump_internal_state"
 	GetCatalogState                        = "get_catalog_state"
 	SetCatalogState                        = "set_catalog_state"
+)
+
+// New endpoints for the new metadata changes
+const (
+	V2QueryEndpoint    DataSourcesEndpoints = "v2/query"
+	V1MetadataEndpoint                      = "v1/metadata"
 )
 
 // GetV2Query helps construct a valid query that can be run on v2/query
