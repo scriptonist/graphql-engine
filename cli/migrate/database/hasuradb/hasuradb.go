@@ -374,6 +374,7 @@ func (h *HasuraDB) ensureVersionTable() error {
 		},
 	}
 
+	// TODO: change it to use v2 for data sources
 	resp, body, err := h.sendv1Query(query)
 	if err != nil {
 		h.logger.Debug(err)
