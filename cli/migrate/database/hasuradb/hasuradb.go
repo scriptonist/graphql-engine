@@ -447,6 +447,31 @@ func (h *HasuraDB) sendv1Query(m interface{}) (resp *http.Response, body []byte,
 	return resp, body, err
 }
 
+func (h *HasuraDB) sendv2Query(queryType V2Query, args map[string]interface{}, source string) (resp *http.Response, body []byte, err error) {
+	requestEndpoint := h.config.queryURL.String()
+	if requestEndpoint != string(V2QueryEndpoint) {
+		requestEndpoint = string(V2QueryEndpoint)
+	}
+
+	payload := GetV2Query(queryType, args, source)
+
+	request := h.config.Req.Clone()
+	request = request.Post(requestEndpoint).Send(payload)
+	for headerName, headerValue := range h.config.Headers {
+		request.Set(headerName, headerValue)
+	}
+
+	resp, body, errs := request.EndBytes()
+
+	if len(errs) == 0 {
+		err = nil
+	} else {
+		err = errs[0]
+	}
+
+	return resp, body, err
+}
+
 func (h *HasuraDB) sendv1GraphQL(query interface{}) (resp *http.Response, body []byte, err error) {
 	request := h.config.Req.Clone()
 	request = request.Post(h.config.graphqlURL.String()).Send(query)
