@@ -15,14 +15,21 @@ import (
 // MigrationState is derived from the schema_migrations table
 type MigrationState struct {
 	Version int64  `json:"version"`
-	Name    string `json:"name"` // may not be necessary
+	Name    string `json:"name,omitempty"` // may not be necessary
 	Dirty   bool   `json:"dirty"`
+}
+
+// MigrationSetting are all fields that were in the migration_settings table
+// NOTE: the type is (text, text)
+type MigrationSetting struct {
+	MigrationMode bool `json:"migration_mode"`
+	// TODO: add other settings here
 }
 
 // CLIState is derived from the migration_settings and cli_state
 type CLIState struct {
-	Migrations    []MigrationState `json:"migrations"`
-	MigrationMode bool             `json:"migration_mode"`
+	Migrations       []MigrationState `json:"migrations"`
+	MigrationSetting MigrationSetting `json:"migration_settings"`
 	// TODO: add more fields here
 }
 
