@@ -8,6 +8,7 @@ import (
 
 const (
 	DefaultSettingsTable = "migration_settings"
+	DefaultMigrationsKey = "migration_settings"
 )
 
 func (h *HasuraDB) ensureSettingsTable() error {
@@ -73,6 +74,11 @@ func (h *HasuraDB) ensureSettingsTable() error {
 		return fmt.Errorf("Creating Version table failed %s", hres.ResultType)
 	}
 	return h.setDefaultSettings()
+}
+
+func (h *HasuraDB) ensureSettingsKey() error {
+	// check if the migrations key exists on the state
+	return nil
 }
 
 func (h *HasuraDB) setDefaultSettings() error {
