@@ -267,6 +267,18 @@ type HasuraArgs struct {
 	Set       interface{}   `json:"$set,omitempty"`
 }
 
+type HasuraQueryV2 struct {
+	Type   V2Query     `json:"type" yaml:"type"`
+	Args   interface{} `json:"args" yaml:"args"`
+	Source string      `json:"source" yaml:"source"`
+}
+
+type HasuraV1MetadataQuery struct {
+	Type   V1Metadata  `json:"type" yaml:"type"`
+	Args   interface{} `json:"args" yaml:"args"`
+	Source string      `json:"source,omitempty" yaml:"source,omitempty"`
+}
+
 type HasuraOrderBy struct {
 	Column string `json:"column,omitempty"`
 	Type   string `json:"type,omitempty"`
@@ -313,10 +325,10 @@ func (mderror *InconsistentMetadataError) String() string {
 }
 
 type SQLInternalError struct {
-	Arguments                 []string      `json:"arguments" mapstructure:"arguments,omitempty"`
+	Arguments                 []string       `json:"arguments" mapstructure:"arguments,omitempty"`
 	Error                     *PostgresError `json:"error" mapstructure:"error,omitempty"`
-	Prepared                  bool          `json:"prepared" mapstructure:"prepared,omitempty"`
-	Statement                 string        `json:"statement" mapstructure:"statement,omitempty"`
+	Prepared                  bool           `json:"prepared" mapstructure:"prepared,omitempty"`
+	Statement                 string         `json:"statement" mapstructure:"statement,omitempty"`
 	InconsistentMetadataError `mapstructure:",squash"`
 }
 type PostgresError struct {
