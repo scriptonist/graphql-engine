@@ -106,17 +106,24 @@ const (
 
 // GetV2Query helps construct a valid query that can be run on v2/query
 // NOTE: `source` is manadatory for all queries to v2/query
-func GetV2Query(queryType V2Query, args map[string]interface{}, source string) map[string]interface{} {
-	return map[string]interface{}{
-		"type":   queryType,
-		"source": source,
-		"args":   args,
+func GetV2Query(queryType V2Query, args map[string]interface{}, source string) HasuraQueryV2 {
+	return HasuraQueryV2{
+		Type:   queryType,
+		Args:   args,
+		Source: source,
 	}
+}
+
+// AlternativeHasuraV1MetadataQuery is a less restrictive version of HasuraV1MetadataQuery
+type AlternativeHasuraV1MetadataQuery struct {
+	Type   string      `json:"type" yaml:"type"`
+	Args   interface{} `json:"args" yaml:"args"`
+	Source string      `json:"source,omitempty" yaml:"source,omitempty"`
 }
 
 // GetV1MetadataQueryWithPrefix helps construct a valid query that can be run on v1/metadata
 // NOTE: not all metadata queries require the source and the prefix.
-func GetV1MetadataQueryWithPrefix(queryType V1Metadata, args map[string]interface{}, dbDriver DatabaseDriver, source string) map[string]interface{} {
+func GetV1MetadataQueryWithPrefix(queryType V1Metadata, args map[string]interface{}, dbDriver DatabaseDriver, source string) AlternativeHasuraV1MetadataQuery {
 	typePrefix := "pg_"
 	if dbDriver != "" && dbDriver != Postgres {
 		// Kept it simple since we don't have any other driver(s) atm.
@@ -126,32 +133,32 @@ func GetV1MetadataQueryWithPrefix(queryType V1Metadata, args map[string]interfac
 	requestType := typePrefix + string(queryType)
 
 	if source == "" {
-		return map[string]interface{}{
-			"type": requestType,
-			"args": args,
+		return AlternativeHasuraV1MetadataQuery{
+			Type: requestType,
+			Args: args,
 		}
 	}
 
-	return map[string]interface{}{
-		"type":   requestType,
-		"source": source,
-		"args":   args,
+	return AlternativeHasuraV1MetadataQuery{
+		Type:   requestType,
+		Source: source,
+		Args:   args,
 	}
 }
 
 // GetV1MetadataQueryNoPrefix helps construct a valid query that can be run on v1/metadata
 // NOTE: not all metadata queries require the source and the prefix.
-func GetV1MetadataQueryNoPrefix(queryType V1Metadata, args map[string]interface{}, source string) map[string]interface{} {
+func GetV1MetadataQueryNoPrefix(queryType V1Metadata, args map[string]interface{}, source string) HasuraV1MetadataQuery {
 	if source == "" {
-		return map[string]interface{}{
-			"type": queryType,
-			"args": args,
+		return HasuraV1MetadataQuery{
+			Type: queryType,
+			Args: args,
 		}
 	}
 
-	return map[string]interface{}{
-		"type":   queryType,
-		"source": source,
-		"args":   args,
+	return HasuraV1MetadataQuery{
+		Type:   queryType,
+		Source: source,
+		Args:   args,
 	}
 }
