@@ -274,7 +274,7 @@ type HasuraQueryV2 struct {
 }
 
 type HasuraV1MetadataQuery struct {
-	Type   V1Metadata  `json:"type" yaml:"type"`
+	Type   string      `json:"type" yaml:"type"`
 	Args   interface{} `json:"args" yaml:"args"`
 	Source string      `json:"source,omitempty" yaml:"source,omitempty"`
 }

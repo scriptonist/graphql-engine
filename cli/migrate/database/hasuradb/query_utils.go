@@ -104,6 +104,17 @@ const (
 	V1MetadataEndpoint                      = "v1/metadata"
 )
 
+// QueriesWithDriver includes all the queries that require the db driver to be mentioned
+var (
+	QueriesWithDriver = []V1Metadata{AddSource, DropSource, ReloadSource, TrackTable, UnTrackTable,
+		SetTableIsEnum, SetTableCustomFields, TrackFunction, UnTrackFunction, CreateObjectRelationship, CreateArrayRelationship,
+		DropRelationship, SetPermissionComment, RenameRelationship, AddComputedField, DropComputedField, CreateRemoteRelationship,
+		UpdateRemoteRelationship, DeleteRemoteRelationship, CreateInsertPermission, CreateSelectPermission, CreateUpdatePermission,
+		CreateDeletePermission, DropInsertPermission, DropSelectPermission, DropUpdatePermission, DropDeletePermission, SetRelationshipComment,
+		CreateEventTrigger, DeleteEventTrigger, RedeliverEvent, InvokeEventTrigger,
+	}
+)
+
 // GetV2Query helps construct a valid query that can be run on v2/query
 // NOTE: `source` is manadatory for all queries to v2/query
 func GetV2Query(queryType V2Query, args map[string]interface{}, source string) HasuraQueryV2 {
@@ -114,50 +125,38 @@ func GetV2Query(queryType V2Query, args map[string]interface{}, source string) H
 	}
 }
 
-// AlternativeHasuraV1MetadataQuery is a less restrictive version of HasuraV1MetadataQuery
-type AlternativeHasuraV1MetadataQuery struct {
-	Type   string      `json:"type" yaml:"type"`
-	Args   interface{} `json:"args" yaml:"args"`
-	Source string      `json:"source,omitempty" yaml:"source,omitempty"`
-}
-
-// GetV1MetadataQueryWithPrefix helps construct a valid query that can be run on v1/metadata
+// GetV1MetadataQuery helps construct a valid query that can be run on v1/metadata
 // NOTE: not all metadata queries require the source and the prefix.
-func GetV1MetadataQueryWithPrefix(queryType V1Metadata, args map[string]interface{}, dbDriver DatabaseDriver, source string) AlternativeHasuraV1MetadataQuery {
+// FIXME: I feel dbDriver should not be something that we should be passing to this method explicitly
+func GetV1MetadataQuery(queryType V1Metadata, args map[string]interface{}, dbDriver DatabaseDriver, source string) HasuraV1MetadataQuery {
 	typePrefix := "pg_"
 	if dbDriver != "" && dbDriver != Postgres {
 		// Kept it simple since we don't have any other driver(s) atm.
 		typePrefix = "mysq_"
 	}
 
-	requestType := typePrefix + string(queryType)
+	requestType := string(queryType)
+	needsPrefix := false
+
+	for _, val := range QueriesWithDriver {
+		if val == queryType {
+			needsPrefix = true
+		}
+	}
+
+	if needsPrefix {
+		requestType = typePrefix + requestType
+	}
 
 	if source == "" {
-		return AlternativeHasuraV1MetadataQuery{
+		return HasuraV1MetadataQuery{
 			Type: requestType,
 			Args: args,
 		}
 	}
 
-	return AlternativeHasuraV1MetadataQuery{
-		Type:   requestType,
-		Source: source,
-		Args:   args,
-	}
-}
-
-// GetV1MetadataQueryNoPrefix helps construct a valid query that can be run on v1/metadata
-// NOTE: not all metadata queries require the source and the prefix.
-func GetV1MetadataQueryNoPrefix(queryType V1Metadata, args map[string]interface{}, source string) HasuraV1MetadataQuery {
-	if source == "" {
-		return HasuraV1MetadataQuery{
-			Type: queryType,
-			Args: args,
-		}
-	}
-
 	return HasuraV1MetadataQuery{
-		Type:   queryType,
+		Type:   requestType,
 		Source: source,
 		Args:   args,
 	}
