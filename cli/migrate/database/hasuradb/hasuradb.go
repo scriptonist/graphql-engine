@@ -13,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hasura/graphql-engine/cli/version"
+
 	yaml "github.com/ghodss/yaml"
 	"github.com/hasura/graphql-engine/cli/metadata/types"
 	"github.com/hasura/graphql-engine/cli/migrate/database"
@@ -44,6 +46,7 @@ type Config struct {
 	queryURL                       *nurl.URL
 	graphqlURL                     *nurl.URL
 	pgDumpURL                      *nurl.URL
+	metadataURL                    *nurl.URL
 	Headers                        map[string]string
 	isCMD                          bool
 	Plugins                        types.MetadataPlugins
@@ -52,26 +55,28 @@ type Config struct {
 }
 
 type HasuraDB struct {
-	config         *Config
-	settings       []database.Setting
-	migrations     *database.Migrations
-	migrationQuery HasuraInterfaceBulk
-	jsonPath       map[string]string
-	isLocked       bool
-	logger         *log.Logger
+	config             *Config
+	settings           []database.Setting
+	migrations         *database.Migrations
+	migrationQuery     HasuraInterfaceBulk
+	jsonPath           map[string]string
+	isLocked           bool
+	logger             *log.Logger
+	serverFeatureFlags version.ServerFeatureFlags
 }
 
-func WithInstance(config *Config, logger *log.Logger) (database.Driver, error) {
+func WithInstance(config *Config, logger *log.Logger, serverFeatureFlags version.ServerFeatureFlags) (database.Driver, error) {
 	if config == nil {
 		logger.Debug(ErrNilConfig)
 		return nil, ErrNilConfig
 	}
 
 	hx := &HasuraDB{
-		config:     config,
-		migrations: database.NewMigrations(),
-		settings:   database.Settings,
-		logger:     logger,
+		config:             config,
+		migrations:         database.NewMigrations(),
+		settings:           database.Settings,
+		logger:             logger,
+		serverFeatureFlags: serverFeatureFlags,
 	}
 
 	if err := hx.ensureVersionTable(); err != nil {
@@ -86,7 +91,7 @@ func WithInstance(config *Config, logger *log.Logger) (database.Driver, error) {
 	return hx, nil
 }
 
-func (h *HasuraDB) Open(url string, isCMD bool, tlsConfig *tls.Config, logger *log.Logger) (database.Driver, error) {
+func (h *HasuraDB) Open(url string, isCMD bool, tlsConfig *tls.Config, logger *log.Logger, serverFeatureFlags version.ServerFeatureFlags) (database.Driver, error) {
 	if logger == nil {
 		logger = log.New()
 	}
@@ -138,12 +143,17 @@ func (h *HasuraDB) Open(url string, isCMD bool, tlsConfig *tls.Config, logger *l
 			Host:   hurl.Host,
 			Path:   path.Join(hurl.Path, params.Get("pg_dump")),
 		},
+		metadataURL: &nurl.URL{
+			Scheme: scheme,
+			Host:   hurl.Host,
+			Path:   path.Join(hurl.Path, params.Get("metadata")),
+		},
 		isCMD:   isCMD,
 		Headers: headers,
 		Plugins: make(types.MetadataPlugins, 0),
 		Req:     req,
 	}
-	hx, err := WithInstance(config, logger)
+	hx, err := WithInstance(config, logger, serverFeatureFlags)
 	if err != nil {
 		logger.Debug(err)
 		return nil, err
@@ -455,6 +465,31 @@ func (h *HasuraDB) sendv2Query(queryType V2Query, args map[string]interface{}, s
 	}
 
 	payload := GetV2Query(queryType, args, source)
+
+	request := h.config.Req.Clone()
+	request = request.Post(requestEndpoint).Send(payload)
+	for headerName, headerValue := range h.config.Headers {
+		request.Set(headerName, headerValue)
+	}
+
+	resp, body, errs := request.EndBytes()
+
+	if len(errs) == 0 {
+		err = nil
+	} else {
+		err = errs[0]
+	}
+
+	return resp, body, err
+}
+
+func (h *HasuraDB) sendV1MetadataQuery(queryType V1Metadata, args map[string]interface{}, source string) (resp *http.Response, body []byte, err error) {
+	requestEndpoint := h.config.metadataURL.String()
+	if requestEndpoint != string(V1MetadataEndpoint) {
+		requestEndpoint = string(V1MetadataEndpoint)
+	}
+
+	payload := GetV1MetadataQuery(queryType, args, Postgres, source)
 
 	request := h.config.Req.Clone()
 	request = request.Post(requestEndpoint).Send(payload)
