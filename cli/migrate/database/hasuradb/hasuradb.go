@@ -28,6 +28,7 @@ func init() {
 	database.Register("hasuradb", &db)
 }
 
+// TODO: for data sources, there won't be a migrations table, but instead it will have a key on the CLI state on the DB
 const (
 	DefaultMigrationsTable = "schema_migrations"
 	DefaultSchema          = "hdb_catalog"
@@ -54,6 +55,72 @@ type Config struct {
 	Req                            *gorequest.SuperAgent
 }
 
+type DataSourceURL struct {
+	FromEnv   string `json:"from_env,omitempty"`
+	FromValue string `json:"from_value,omitempty"`
+}
+
+type ConnectionPoolSettings struct {
+	MaxConnections        int32 `json:"max_connections,omitempty"`
+	ConnectionIdleTimeout int32 `json:"connection_idle_timeout,omitempty"`
+}
+
+type QualifiedTable struct {
+	Name   string `json:"name"`
+	Schema string `json:"schema"`
+}
+
+type TableEntry struct {
+	Table  QualifiedTable `json:"table"`
+	IsEnum bool           `json:"is_enum,omitempty"`
+}
+
+type ActionPermissions struct {
+	Role string `json:"role"`
+}
+
+type InputArgument struct {
+	Name string `json:"name"`
+	Type string `json:"type"`
+}
+
+type ServerHeader struct {
+	Name         string `json:"name"`
+	Value        string `json:"value,omitempty"`
+	ValueFromEnv string `json:"value_from_env,omitempty"`
+}
+
+type ActionDefinition struct {
+	Handler              string          `json:"handler"`
+	Type                 string          `json:"type,omitempty"` // Can be either mutation / query
+	ForwardClientHeaders bool            `json:"forward_client_headers,omitempty"`
+	Kind                 string          `json:"kind,omitempty"` // Can be either synchronous / asynchronous
+	OutputType           string          `json:"output_type,omitempty"`
+	Arguments            []InputArgument `json:"arguments,omitempty"`
+	Headers              []ServerHeader  `json:"headers,omitempty"`
+}
+
+type Action struct {
+	Name        string              `json:"name"`
+	Comment     string              `json:"comment,omitempty"`
+	Permissions []ActionPermissions `json:"permissions,omitempty"`
+	Definition  ActionDefinition    `json:"definition"`
+}
+
+type V3Metadata struct {
+	Name                   string                 `json:"name"`
+	URL                    DataSourceURL          `json:"url"`
+	ConnectionPoolSettings ConnectionPoolSettings `json:"connection_pool_settings,omitempty"`
+	Tables                 []TableEntry           `json:"tables"`
+	Actions                []Action               `json:"actions,omitempty"`
+	//CustomTypes CustomTypes `json:"custom_types,omitempty"` -- Don't think this is required at the moment
+}
+
+type TotalMetadata struct {
+	Version int          `json:"version"`
+	Sources []V3Metadata `json:"sources"`
+}
+
 type HasuraDB struct {
 	config             *Config
 	settings           []database.Setting
@@ -63,6 +130,9 @@ type HasuraDB struct {
 	isLocked           bool
 	logger             *log.Logger
 	serverFeatureFlags version.ServerFeatureFlags
+	currentSource      string
+	currentMetadata    TotalMetadata
+	connectedSources   []string
 }
 
 func WithInstance(config *Config, logger *log.Logger, serverFeatureFlags version.ServerFeatureFlags) (database.Driver, error) {
@@ -77,6 +147,7 @@ func WithInstance(config *Config, logger *log.Logger, serverFeatureFlags version
 		settings:           database.Settings,
 		logger:             logger,
 		serverFeatureFlags: serverFeatureFlags,
+		currentSource:      "default",
 	}
 
 	if err := hx.ensureVersionTable(); err != nil {
@@ -489,6 +560,7 @@ func (h *HasuraDB) sendV1MetadataQuery(queryType V1Metadata, args map[string]int
 		requestEndpoint = string(V1MetadataEndpoint)
 	}
 
+	// FIXME : passing Postgres here since, that's what is supported at the moment
 	payload := GetV1MetadataQuery(queryType, args, Postgres, source)
 
 	request := h.config.Req.Clone()
