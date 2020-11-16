@@ -371,6 +371,10 @@ func (m *Migrate) ExportSchemaDump(schemName []string) ([]byte, error) {
 	return m.databaseDrv.ExportSchemaDump(schemName)
 }
 
+func (m *Migrate) GetCurrentDataSources() error {
+	return m.databaseDrv.GetConnectedDataSources()
+}
+
 func (m *Migrate) RemoveVersions(versions []uint64) error {
 	mode, err := m.databaseDrv.GetSetting("migration_mode")
 	if err != nil {
