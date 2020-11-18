@@ -18,7 +18,6 @@ type ServerFeatureFlags struct {
 const adminSecretVersion = "v1.0.0-alpha38"
 const actionVersion = "v1.2.0-beta.1"
 const cronTriggersVersion = "v1.3.0-beta.1"
-const datasourcesVersion = "v1.4.0-alpha.1"
 
 // Note: change this while testing, otherwise things won't work :P
 const datasourcesVersion = "v1.4.0-alpha.1"
