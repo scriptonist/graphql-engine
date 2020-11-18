@@ -30,7 +30,7 @@ const (
 	Count            = "count"
 )
 
-// All allowed query types that are allowed on v1/metadata
+// All query types that are allowed on v1/metadata
 const (
 	AddSource                   V1Metadata = "add_source"
 	DropSource                             = "drop_source"
