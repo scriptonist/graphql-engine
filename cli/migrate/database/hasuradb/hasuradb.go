@@ -121,6 +121,26 @@ type TotalMetadata struct {
 	Sources []V3Metadata `json:"sources"`
 }
 
+type Migration struct {
+	Name    string `json:"name,omitempty"`
+	Dirty   bool   `json:"dirty,omitempty"`
+	Version int64  `json:"version,omitempty"`
+}
+
+type MigrationSetting struct {
+	MigrationMode bool `json:"migration_mode,omitempty"`
+}
+
+type CLIState struct {
+	SchemaMigrations  []Migration      `json:"schema_migrations,omitempty"`
+	MigrationsSetting MigrationSetting `json:"migration_settings,omitempty"`
+}
+
+type CatalogState struct {
+	ID       string   `json:"id"`
+	CLIState CLIState `json:"cli_state,omitempty"`
+}
+
 type HasuraDB struct {
 	config             *Config
 	settings           []database.Setting
@@ -133,6 +153,7 @@ type HasuraDB struct {
 	currentSource      string
 	currentMetadata    TotalMetadata
 	connectedSources   []string
+	catalogState       CatalogState
 }
 
 func WithInstance(config *Config, logger *log.Logger, serverFeatureFlags version.ServerFeatureFlags) (database.Driver, error) {
@@ -149,16 +170,27 @@ func WithInstance(config *Config, logger *log.Logger, serverFeatureFlags version
 		serverFeatureFlags: serverFeatureFlags,
 		currentSource:      "default",
 	}
+	if !serverFeatureFlags.HasDatasources {
+		if err := hx.ensureVersionTable(); err != nil {
+			logger.Debug(err)
+			return nil, err
+		}
 
-	if err := hx.ensureVersionTable(); err != nil {
-		logger.Debug(err)
-		return nil, err
+		if err := hx.ensureSettingsTable(false); err != nil {
+			logger.Debug(err)
+			return nil, err
+		}
+
+		// TODO: the version table stuff here
+
+		if err := hx.ensureSettingsTable(true); err != nil {
+			logger.Debug(err)
+			return nil, err
+		}
+
+		return hx, nil
 	}
 
-	if err := hx.ensureSettingsTable(); err != nil {
-		logger.Debug(err)
-		return nil, err
-	}
 	return hx, nil
 }
 
@@ -361,13 +393,17 @@ func (h *HasuraDB) ResetQuery() {
 
 // TODO: change this implementation
 func (h *HasuraDB) InsertVersion(version int64) error {
-	query := HasuraQuery{
-		Type: "run_sql",
-		Args: HasuraArgs{
-			SQL: `INSERT INTO ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.MigrationsTable) + ` (version, dirty) VALUES (` + strconv.FormatInt(version, 10) + `, ` + fmt.Sprintf("%t", false) + `)`,
-		},
+	if !h.serverFeatureFlags.HasDatasources {
+		query := HasuraQuery{
+			Type: "run_sql",
+			Args: HasuraArgs{
+				SQL: `INSERT INTO ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.MigrationsTable) + ` (version, dirty) VALUES (` + strconv.FormatInt(version, 10) + `, ` + fmt.Sprintf("%t", false) + `)`,
+			},
+		}
+		h.migrationQuery.Args = append(h.migrationQuery.Args, query)
+		return nil
 	}
-	h.migrationQuery.Args = append(h.migrationQuery.Args, query)
+
 	return nil
 }
 
