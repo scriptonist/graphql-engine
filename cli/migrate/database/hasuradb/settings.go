@@ -96,13 +96,20 @@ func (h *HasuraDB) ensureSettingsTable(hasDataSources bool) error {
 
 	toSetKey := false
 
-	if currentCatalogState[DefaultMigrationsTable] == nil {
+	if currentCatalogState["cli_state"] != nil && currentCatalogState["cli_state"].(map[string]interface{})[DefaultMigrationsTable] == nil {
 		toSetKey = true
 	}
 
 	if toSetKey {
+		// basically, here the idea is to append the new keys to the current state on the DB and update it
+		// TODO: make this above process simpler using a function
+		currentCliState := currentCatalogState["cli_state"]
+		currentCliState.(map[string]interface{})[DefaultSettingsTable] = map[string]interface{}{}
+		currentCatalogState["cli_state"] = currentCliState
+
 		args := map[string]interface{}{
-			DefaultMigrationsTable: map[string]interface{}{},
+			"state": currentCatalogState,
+			"type":  "cli",
 		}
 
 		setResp, setBody, setErr := h.sendV1MetadataQuery(SetCatalogState, args, "")
@@ -149,8 +156,16 @@ func (h *HasuraDB) setDefaultSettings(hasDataSources bool) error {
 		}
 	}
 
-	args := map[string]interface{}{
+	// TODO: probably have to make an API call to fetch the latest from the catalog state
+
+	newState := map[string]interface{}{
 		DefaultMigrationsTable: true,
+	}
+
+	// TODO: make a query object for these args
+	args := map[string]interface{}{
+		"state": newState,
+		"type":  "cli",
 	}
 
 	resp, body, err := h.sendV1MetadataQuery(SetCatalogState, args, "")
