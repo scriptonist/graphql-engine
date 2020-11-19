@@ -12,9 +12,9 @@ const (
 	DefaultSettingsTable = "migration_settings"
 )
 
-func (h *HasuraDB) ensureSettingsTable(hasDataSources bool) error {
+func (h *HasuraDB) ensureSettingsTable() error {
 	// check if migration table exists
-	if !hasDataSources {
+	if !h.serverFeatureFlags.HasDatasources {
 		query := HasuraQuery{
 			Type: "run_sql",
 			Args: HasuraArgs{
@@ -75,7 +75,7 @@ func (h *HasuraDB) ensureSettingsTable(hasDataSources bool) error {
 		if hres.ResultType != CommandOK {
 			return fmt.Errorf("Creating Version table failed %s", hres.ResultType)
 		}
-		return h.setDefaultSettings(false)
+		return h.setDefaultSettings()
 	}
 
 	resp, body, err := h.sendV1MetadataQuery(GetCatalogState, map[string]interface{}{}, "")
@@ -123,11 +123,11 @@ func (h *HasuraDB) ensureSettingsTable(hasDataSources bool) error {
 		}
 	}
 
-	return h.setDefaultSettings(true)
+	return h.setDefaultSettings()
 }
 
-func (h *HasuraDB) setDefaultSettings(hasDataSources bool) error {
-	if !hasDataSources {
+func (h *HasuraDB) setDefaultSettings() error {
+	if !h.serverFeatureFlags.HasDatasources {
 		query := HasuraBulk{
 			Type: "bulk",
 			Args: make([]HasuraQuery, 0),

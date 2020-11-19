@@ -171,30 +171,15 @@ func WithInstance(config *Config, logger *log.Logger, serverFeatureFlags version
 		serverFeatureFlags: serverFeatureFlags,
 		currentSource:      "default",
 	}
-	if !serverFeatureFlags.HasDatasources {
-		if err := hx.ensureVersionTable(false); err != nil {
-			logger.Debug(err)
-			return nil, err
-		}
 
-		if err := hx.ensureSettingsTable(false); err != nil {
-			logger.Debug(err)
-			return nil, err
-		}
+	if err := hx.ensureVersionTable(); err != nil {
+		logger.Debug(err)
+		return nil, err
+	}
 
-		// TODO: the version table stuff here
-
-		if err := hx.ensureVersionTable(true); err != nil {
-			logger.Debug(err)
-			return nil, err
-		}
-
-		if err := hx.ensureSettingsTable(true); err != nil {
-			logger.Debug(err)
-			return nil, err
-		}
-
-		return hx, nil
+	if err := hx.ensureSettingsTable(); err != nil {
+		logger.Debug(err)
+		return nil, err
 	}
 
 	return hx, nil
@@ -488,9 +473,9 @@ func (h *HasuraDB) Drop() error {
 	return nil
 }
 
-func (h *HasuraDB) ensureVersionTable(hasDataSources bool) error {
+func (h *HasuraDB) ensureVersionTable() error {
 	// check if migration table exists
-	if !hasDataSources {
+	if !h.serverFeatureFlags.HasDatasources {
 		query := HasuraQuery{
 			Type: "run_sql",
 			Args: HasuraArgs{
