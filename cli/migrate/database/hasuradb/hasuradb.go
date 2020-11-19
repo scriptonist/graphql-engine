@@ -382,7 +382,6 @@ func (h *HasuraDB) ResetQuery() {
 	h.migrationQuery.ResetArgs()
 }
 
-// TODO: change this implementation
 func (h *HasuraDB) InsertVersion(version int64) error {
 	if !h.serverFeatureFlags.HasDatasources {
 		query := HasuraQuery{
@@ -395,18 +394,53 @@ func (h *HasuraDB) InsertVersion(version int64) error {
 		return nil
 	}
 
+	migrationObj := Migration{
+		Version: version,
+		Dirty:   false,
+	}
+
+	// TODO: we need a place to set the cli state, and ensure that's updated all the time, we perform an API action
+
+	h.catalogState.CLIState.SchemaMigrations = append(h.catalogState.CLIState.SchemaMigrations, migrationObj)
+	data, err := json.Marshal(h.catalogState.CLIState)
+
+	if err != nil {
+		return errors.Wrap(err, err.Error())
+	}
+
+	var newState map[string]interface{}
+	json.Unmarshal(data, &newState)
+
+	args := map[string]interface{}{
+		"state": newState,
+		"type":  "cli",
+	}
+
+	resp, body, err := h.sendV1MetadataQuery(SetCatalogState, args, "")
+
+	if err != nil {
+		errors.Wrap(err, "Failed to update details of migration to the database")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return NewHasuraError(body, h.config.isCMD)
+	}
+
 	return nil
 }
 
-// TODO: change this implementation
 func (h *HasuraDB) RemoveVersion(version int64) error {
-	query := HasuraQuery{
-		Type: "run_sql",
-		Args: HasuraArgs{
-			SQL: `DELETE FROM ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.MigrationsTable) + ` WHERE version = ` + strconv.FormatInt(version, 10),
-		},
+	if !h.serverFeatureFlags.HasDatasources {
+		query := HasuraQuery{
+			Type: "run_sql",
+			Args: HasuraArgs{
+				SQL: `DELETE FROM ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.MigrationsTable) + ` WHERE version = ` + strconv.FormatInt(version, 10),
+			},
+		}
+		h.migrationQuery.Args = append(h.migrationQuery.Args, query)
+		return nil
 	}
-	h.migrationQuery.Args = append(h.migrationQuery.Args, query)
+
 	return nil
 }
 
