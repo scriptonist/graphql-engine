@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -171,7 +172,7 @@ func WithInstance(config *Config, logger *log.Logger, serverFeatureFlags version
 		currentSource:      "default",
 	}
 	if !serverFeatureFlags.HasDatasources {
-		if err := hx.ensureVersionTable(); err != nil {
+		if err := hx.ensureVersionTable(false); err != nil {
 			logger.Debug(err)
 			return nil, err
 		}
@@ -182,6 +183,11 @@ func WithInstance(config *Config, logger *log.Logger, serverFeatureFlags version
 		}
 
 		// TODO: the version table stuff here
+
+		if err := hx.ensureVersionTable(true); err != nil {
+			logger.Debug(err)
+			return nil, err
+		}
 
 		if err := hx.ensureSettingsTable(true); err != nil {
 			logger.Debug(err)
@@ -482,66 +488,106 @@ func (h *HasuraDB) Drop() error {
 	return nil
 }
 
-func (h *HasuraDB) ensureVersionTable() error {
+func (h *HasuraDB) ensureVersionTable(hasDataSources bool) error {
 	// check if migration table exists
-	query := HasuraQuery{
-		Type: "run_sql",
-		Args: HasuraArgs{
-			SQL: `SELECT COUNT(1) FROM information_schema.tables WHERE table_name = '` + h.config.MigrationsTable + `' AND table_schema = '` + DefaultSchema + `' LIMIT 1`,
-		},
-	}
+	if !hasDataSources {
+		query := HasuraQuery{
+			Type: "run_sql",
+			Args: HasuraArgs{
+				SQL: `SELECT COUNT(1) FROM information_schema.tables WHERE table_name = '` + h.config.MigrationsTable + `' AND table_schema = '` + DefaultSchema + `' LIMIT 1`,
+			},
+		}
 
-	// TODO: change it to use v2 for data sources
-	resp, body, err := h.sendv1Query(query)
-	if err != nil {
-		h.logger.Debug(err)
-		return err
-	}
-	h.logger.Debug("response: ", string(body))
+		resp, body, err := h.sendv1Query(query)
+		if err != nil {
+			h.logger.Debug(err)
+			return err
+		}
+		h.logger.Debug("response: ", string(body))
 
-	if resp.StatusCode != http.StatusOK {
-		return NewHasuraError(body, h.config.isCMD)
-	}
+		if resp.StatusCode != http.StatusOK {
+			return NewHasuraError(body, h.config.isCMD)
+		}
 
-	var hres HasuraSQLRes
-	err = json.Unmarshal(body, &hres)
-	if err != nil {
-		h.logger.Debug(err)
-		return err
-	}
+		var hres HasuraSQLRes
+		err = json.Unmarshal(body, &hres)
+		if err != nil {
+			h.logger.Debug(err)
+			return err
+		}
 
-	if hres.ResultType != TuplesOK {
-		return fmt.Errorf("Invalid result Type %s", hres.ResultType)
-	}
+		if hres.ResultType != TuplesOK {
+			return fmt.Errorf("Invalid result Type %s", hres.ResultType)
+		}
 
-	if hres.Result[1][0] != "0" {
+		if hres.Result[1][0] != "0" {
+			return nil
+		}
+
+		// Now Create the table
+		query = HasuraQuery{
+			Type: "run_sql",
+			Args: HasuraArgs{
+				SQL: `CREATE TABLE ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.MigrationsTable) + ` (version bigint not null primary key, dirty boolean not null)`,
+			},
+		}
+
+		resp, body, err = h.sendv1Query(query)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return NewHasuraError(body, h.config.isCMD)
+		}
+
+		err = json.Unmarshal(body, &hres)
+		if err != nil {
+			return err
+		}
+
+		if hres.ResultType != CommandOK {
+			return fmt.Errorf("Creating Version table failed %s", hres.ResultType)
+		}
+
 		return nil
 	}
 
-	// Now Create the table
-	query = HasuraQuery{
-		Type: "run_sql",
-		Args: HasuraArgs{
-			SQL: `CREATE TABLE ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.MigrationsTable) + ` (version bigint not null primary key, dirty boolean not null)`,
-		},
-	}
+	resp, body, err := h.sendV1MetadataQuery(GetCatalogState, map[string]interface{}{}, "")
 
-	resp, body, err = h.sendv1Query(query)
+	var currentCatalogState map[string]interface{}
+	json.Unmarshal(body, &currentCatalogState)
+
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to fetch the latest details on the migrations")
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		return NewHasuraError(body, h.config.isCMD)
 	}
 
-	err = json.Unmarshal(body, &hres)
-	if err != nil {
-		return err
+	toBeSet := false
+	if currentCatalogState["cli_state"] != nil && currentCatalogState["cli_state"].(map[string]interface{})[DefaultMigrationsTable] == nil {
+		toBeSet = true
 	}
 
-	if hres.ResultType != CommandOK {
-		return fmt.Errorf("Creating Version table failed %s", hres.ResultType)
+	if toBeSet {
+		currentCliState := currentCatalogState["cli_state"]
+		currentCliState.(map[string]interface{})[DefaultMigrationsTable] = map[string]interface{}{}
+		args := map[string]interface{}{
+			"state": currentCliState,
+			"type":  "cli",
+		}
+
+		respSet, bodySet, errSet := h.sendV1MetadataQuery(SetCatalogState, args, "")
+
+		if errSet != nil {
+			return errors.Wrap(err, "Failed to set the latest state on the database")
+		}
+
+		if respSet.StatusCode != http.StatusOK {
+			return NewHasuraError(bodySet, h.config.isCMD)
+		}
 	}
 
 	return nil
