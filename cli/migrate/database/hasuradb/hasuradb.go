@@ -441,9 +441,46 @@ func (h *HasuraDB) RemoveVersion(version int64) error {
 		return nil
 	}
 
+	// NOTE: This strictly assumes that the hasuradb struct contains a copy of the latest catalog state
+
+	// remove the migration from the list
+	newSetOfMigrations := make([]Migration, len(h.catalogState.CLIState.SchemaMigrations)-1)
+	for _, mig := range h.catalogState.CLIState.SchemaMigrations {
+		if version != mig.Version {
+			newSetOfMigrations = append(newSetOfMigrations, mig)
+		}
+	}
+
+	h.catalogState.CLIState.SchemaMigrations = newSetOfMigrations
+
+	data, err := json.Marshal(h.catalogState.CLIState)
+
+	if err != nil {
+		return errors.Wrap(err, err.Error())
+	}
+
+	var newState map[string]interface{}
+	json.Unmarshal(data, &newState)
+
+	args := map[string]interface{}{
+		"state": newState,
+		"type":  "cli",
+	}
+
+	resp, body, err := h.sendV1MetadataQuery(SetCatalogState, args, "")
+
+	if err != nil {
+		errors.Wrap(err, "Failed to update details of migration to the database")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return NewHasuraError(body, h.config.isCMD)
+	}
+
 	return nil
 }
 
+// TODO: change for data sources changes
 func (h *HasuraDB) getVersions() (err error) {
 
 	query := HasuraQuery{
