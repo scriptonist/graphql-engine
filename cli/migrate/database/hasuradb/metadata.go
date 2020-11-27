@@ -248,3 +248,53 @@ func (h *HasuraDB) Query(data interface{}) error {
 	}
 	return nil
 }
+
+// GetConnectedDataSources fetches all the sources that might've been connected previously and are
+// present the current metadata on the database
+func (h *HasuraDB) GetConnectedDataSources() error {
+	if !h.serverFeatureFlags.HasDatasources {
+		return errors.New("Your current version of Hasura doesn't support multiple data sources.")
+	}
+
+	resp, body, err := h.sendV1MetadataQuery(ExportMetadata, map[string]interface{}{}, "")
+
+	if err != nil {
+		return errors.Wrap(err, "Failed to fetch the latest metadata")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return NewHasuraError(body, h.config.isCMD)
+	}
+
+	// Unmarshal the response if everything is okay
+	var fullBody TotalMetadata
+	json.Unmarshal(body, &fullBody)
+
+	if fullBody.Version < 3 {
+		return errors.New("Your current version of Hasura doesn't support multiple data sources.")
+	}
+
+	metadataSourceNames := make([]string, len(fullBody.Sources))
+
+	for _, meta := range fullBody.Sources {
+		metadataSourceNames = append(metadataSourceNames, meta.Name)
+	}
+
+	isDefaultSourcePresent := false
+
+	for _, source := range metadataSourceNames {
+		if source == "default" {
+			isDefaultSourcePresent = true
+		}
+	}
+
+	if isDefaultSourcePresent {
+		h.currentSource = "default"
+	} else {
+		h.currentSource = metadataSourceNames[0]
+	}
+
+	h.connectedSources = metadataSourceNames
+
+	return nil
+}

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -12,91 +14,164 @@ const (
 
 func (h *HasuraDB) ensureSettingsTable() error {
 	// check if migration table exists
-	query := HasuraQuery{
-		Type: "run_sql",
-		Args: HasuraArgs{
-			SQL: `SELECT COUNT(1) FROM information_schema.tables WHERE table_name = '` + h.config.SettingsTable + `' AND table_schema = '` + DefaultSchema + `' LIMIT 1`,
-		},
+	if !h.serverFeatureFlags.HasDatasources {
+		query := HasuraQuery{
+			Type: "run_sql",
+			Args: HasuraArgs{
+				SQL: `SELECT COUNT(1) FROM information_schema.tables WHERE table_name = '` + h.config.SettingsTable + `' AND table_schema = '` + DefaultSchema + `' LIMIT 1`,
+			},
+		}
+
+		resp, body, err := h.sendv1Query(query)
+		if err != nil {
+			h.logger.Debug(err)
+			return err
+		}
+		h.logger.Debug("response: ", string(body))
+
+		if resp.StatusCode != http.StatusOK {
+			return NewHasuraError(body, h.config.isCMD)
+		}
+
+		var hres HasuraSQLRes
+
+		err = json.Unmarshal(body, &hres)
+		if err != nil {
+			h.logger.Debug(err)
+			return err
+		}
+
+		if hres.ResultType != TuplesOK {
+			return fmt.Errorf("Invalid result Type %s", hres.ResultType)
+		}
+
+		if hres.Result[1][0] != "0" {
+			return nil
+		}
+
+		// Now Create the table
+		query = HasuraQuery{
+			Type: "run_sql",
+			Args: HasuraArgs{
+				SQL: `CREATE TABLE ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.SettingsTable) + ` (setting text not null primary key, value text not null)`,
+			},
+		}
+
+		resp, body, err = h.sendv1Query(query)
+		if err != nil {
+			return err
+		}
+		h.logger.Debug("response: ", string(body))
+
+		if resp.StatusCode != http.StatusOK {
+			return NewHasuraError(body, h.config.isCMD)
+		}
+
+		err = json.Unmarshal(body, &hres)
+		if err != nil {
+			return err
+		}
+
+		if hres.ResultType != CommandOK {
+			return fmt.Errorf("Creating Version table failed %s", hres.ResultType)
+		}
+		return h.setDefaultSettings()
 	}
 
-	resp, body, err := h.sendv1Query(query)
+	resp, body, err := h.sendV1MetadataQuery(GetCatalogState, map[string]interface{}{}, "")
+
 	if err != nil {
-		h.logger.Debug(err)
-		return err
+		return errors.Wrap(err, "Could not fetch the latest state from the database")
 	}
-	h.logger.Debug("response: ", string(body))
 
 	if resp.StatusCode != http.StatusOK {
 		return NewHasuraError(body, h.config.isCMD)
 	}
 
-	var hres HasuraSQLRes
-
-	err = json.Unmarshal(body, &hres)
-	if err != nil {
-		h.logger.Debug(err)
+	var currentCatalogState map[string]interface{}
+	if err := json.Unmarshal(body, &currentCatalogState); err != nil {
+		// FIXME: probably should be handling this better
 		return err
 	}
 
-	if hres.ResultType != TuplesOK {
-		return fmt.Errorf("Invalid result Type %s", hres.ResultType)
+	toSetKey := false
+
+	if currentCatalogState["cli_state"] != nil && currentCatalogState["cli_state"].(map[string]interface{})[DefaultMigrationsTable] == nil {
+		toSetKey = true
 	}
 
-	if hres.Result[1][0] != "0" {
-		return nil
+	if toSetKey {
+		// basically, here the idea is to append the new keys to the current state on the DB and update it
+		// TODO: make this above process simpler using a function
+		currentCliState := currentCatalogState["cli_state"]
+		currentCliState.(map[string]interface{})[DefaultSettingsTable] = map[string]interface{}{}
+		currentCatalogState["cli_state"] = currentCliState
+
+		args := map[string]interface{}{
+			"state": currentCatalogState,
+			"type":  "cli",
+		}
+
+		setResp, setBody, setErr := h.sendV1MetadataQuery(SetCatalogState, args, "")
+
+		if setErr != nil {
+			return errors.Wrap(err, "Failed to set the settings key on the cli state")
+		}
+
+		if setResp.StatusCode != http.StatusOK {
+			return NewHasuraError(setBody, h.config.isCMD)
+		}
 	}
 
-	// Now Create the table
-	query = HasuraQuery{
-		Type: "run_sql",
-		Args: HasuraArgs{
-			SQL: `CREATE TABLE ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.SettingsTable) + ` (setting text not null primary key, value text not null)`,
-		},
-	}
-
-	resp, body, err = h.sendv1Query(query)
-	if err != nil {
-		return err
-	}
-	h.logger.Debug("response: ", string(body))
-
-	if resp.StatusCode != http.StatusOK {
-		return NewHasuraError(body, h.config.isCMD)
-	}
-
-	err = json.Unmarshal(body, &hres)
-	if err != nil {
-		return err
-	}
-
-	if hres.ResultType != CommandOK {
-		return fmt.Errorf("Creating Version table failed %s", hres.ResultType)
-	}
 	return h.setDefaultSettings()
 }
 
 func (h *HasuraDB) setDefaultSettings() error {
-	query := HasuraBulk{
-		Type: "bulk",
-		Args: make([]HasuraQuery, 0),
-	}
-	for _, setting := range h.settings {
-		sql := HasuraQuery{
-			Type: "run_sql",
-			Args: HasuraArgs{
-				SQL: `INSERT INTO ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.SettingsTable) + ` (setting, value) VALUES ('` + fmt.Sprintf("%s", setting.GetName()) + `', '` + fmt.Sprintf("%s", setting.GetDefaultValue()) + `')`,
-			},
+	if !h.serverFeatureFlags.HasDatasources {
+		query := HasuraBulk{
+			Type: "bulk",
+			Args: make([]HasuraQuery, 0),
 		}
-		query.Args = append(query.Args, sql)
+		for _, setting := range h.settings {
+			sql := HasuraQuery{
+				Type: "run_sql",
+				Args: HasuraArgs{
+					SQL: `INSERT INTO ` + fmt.Sprintf("%s.%s", DefaultSchema, h.config.SettingsTable) + ` (setting, value) VALUES ('` + fmt.Sprintf("%s", setting.GetName()) + `', '` + fmt.Sprintf("%s", setting.GetDefaultValue()) + `')`,
+				},
+			}
+			query.Args = append(query.Args, sql)
+		}
+
+		if len(query.Args) == 0 {
+			return nil
+		}
+
+		resp, body, err := h.sendv1Query(query)
+		if err != nil {
+			return err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return NewHasuraError(body, h.config.isCMD)
+		}
 	}
 
-	if len(query.Args) == 0 {
-		return nil
+	// TODO: probably have to make an API call to fetch the latest from the catalog state
+
+	newState := map[string]interface{}{
+		DefaultMigrationsTable: true,
 	}
 
-	resp, body, err := h.sendv1Query(query)
+	// TODO: make a query object for these args
+	args := map[string]interface{}{
+		"state": newState,
+		"type":  "cli",
+	}
+
+	resp, body, err := h.sendV1MetadataQuery(SetCatalogState, args, "")
+
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Could not update CLI state correctly")
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -106,6 +181,7 @@ func (h *HasuraDB) setDefaultSettings() error {
 	return nil
 }
 
+// TODO: have to change this for data sources
 func (h *HasuraDB) GetSetting(name string) (value string, err error) {
 	query := HasuraQuery{
 		Type: "run_sql",
@@ -148,6 +224,7 @@ func (h *HasuraDB) GetSetting(name string) (value string, err error) {
 	return hres.Result[1][0], nil
 }
 
+// TODO: have to change this for data sources
 func (h *HasuraDB) UpdateSetting(name string, value string) error {
 	query := HasuraQuery{
 		Type: "run_sql",

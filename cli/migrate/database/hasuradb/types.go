@@ -268,6 +268,18 @@ type HasuraArgs struct {
 	Set       interface{}   `json:"$set,omitempty"`
 }
 
+type HasuraQueryV2 struct {
+	Type   V2Query     `json:"type" yaml:"type"`
+	Args   interface{} `json:"args" yaml:"args"`
+	Source string      `json:"source" yaml:"source"`
+}
+
+type HasuraV1MetadataQuery struct {
+	Type   string      `json:"type" yaml:"type"`
+	Args   interface{} `json:"args" yaml:"args"`
+	Source string      `json:"source,omitempty" yaml:"source,omitempty"`
+}
+
 type HasuraOrderBy struct {
 	Column string `json:"column,omitempty"`
 	Type   string `json:"type,omitempty"`
